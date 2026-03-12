@@ -11,6 +11,17 @@ const languages = [
 ];
 
 export default function ImplementationsSection() {
+  const handleLanguageClick = (e, key) => {
+    e.preventDefault();
+    window.location.href = `/Implementations#${key}`;
+    setTimeout(() => {
+      const element = document.getElementById(key);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
+
   return (
     <section className="bg-white py-24 sm:py-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,6 +42,7 @@ export default function ImplementationsSection() {
               <a
                 key={key}
                 href={`/Implementations#${key}`}
+                onClick={(e) => handleLanguageClick(e, key)}
                 className="px-5 py-2.5 text-sm font-mono rounded-lg border transition-all bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
                 style={{ cursor: 'pointer' }}
               >

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import DocLayout from "../components/docs/DocLayout";
 import CodeBlock from "../components/CodeBlock";
 
@@ -657,6 +657,19 @@ export default function Implementations() {
   const [selected, setSelected] = useState("javascript");
   const current = implementations[selected];
 
+  React.useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    if (hash && implementations[hash]) {
+      setSelected(hash);
+      setTimeout(() => {
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, []);
+
   return (
     <DocLayout title="Reference Implementations">
       <p className="lead text-lg text-gray-500 !mt-0">
@@ -680,6 +693,7 @@ export default function Implementations() {
       <div className="not-prose my-8">
         <div className="flex flex-wrap justify-center gap-3 mb-8">
           <button
+            id="javascript"
             onClick={() => setSelected("javascript")}
             className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
               selected === "javascript"
@@ -691,6 +705,7 @@ export default function Implementations() {
             JavaScript
           </button>
           <button
+            id="python"
             onClick={() => setSelected("python")}
             className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
               selected === "python"
@@ -702,6 +717,7 @@ export default function Implementations() {
             Python
           </button>
           <button
+            id="go"
             onClick={() => setSelected("go")}
             className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
               selected === "go"
@@ -713,6 +729,7 @@ export default function Implementations() {
             Go
           </button>
           <button
+            id="rust"
             onClick={() => setSelected("rust")}
             className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
               selected === "rust"
@@ -724,6 +741,7 @@ export default function Implementations() {
             Rust
           </button>
           <button
+            id="php"
             onClick={() => setSelected("php")}
             className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
               selected === "php"
@@ -735,6 +753,7 @@ export default function Implementations() {
             PHP
           </button>
           <button
+            id="java"
             onClick={() => setSelected("java")}
             className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
               selected === "java"
@@ -746,6 +765,7 @@ export default function Implementations() {
             Java
           </button>
           <button
+            id="swift"
             onClick={() => setSelected("swift")}
             className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
               selected === "swift"

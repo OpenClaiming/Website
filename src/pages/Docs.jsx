@@ -73,7 +73,7 @@ export default function Docs() {
 
       <h1>Version Field</h1>
       <CodeBlock code={`"ocp": 1`} language="json" />
-      <p>The <code>ocp</code> field identifies the OpenClaim version. Version 1 defines JSON canonicalization, SHA-256 hashing, and P-256 signatures. Future versions may support additional algorithms.</p>
+      <p>The <code>ocp</code> field identifies the OpenClaim version. Version 1 standardizes JSON canonicalization, SHA-256 hashing, and P-256 signatures. Future versions may support additional algorithms.</p>
 
       <hr />
 
