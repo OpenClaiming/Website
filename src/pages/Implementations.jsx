@@ -179,7 +179,7 @@ class OpenClaim:
     code: `// Optional strict canonicalizer:
 // github.com/gowebpki/jcs
 
-package openclaims
+package openclaiming
 
 import (
   "crypto/ecdsa"
