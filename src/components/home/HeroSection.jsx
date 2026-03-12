@@ -33,7 +33,7 @@ export default function HeroSection() {
           className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]"
         >
           <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-            Open Claiming Protocol
+            OpenClaiming Protocol
           </span>
         </motion.h1>
 
