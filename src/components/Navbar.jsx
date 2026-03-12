@@ -14,6 +14,7 @@ const navLinks = [
       { label: "Security Model", path: "/SecurityModel" },
       { label: "Protocol Examples", path: "/ProtocolExamples" },
       { label: "Design Philosophy", path: "/DesignPhilosophy" },
+      { label: "Implementations", path: "/Implementations" },
       { label: "Comparison", path: "/Comparison" },
     ],
   },

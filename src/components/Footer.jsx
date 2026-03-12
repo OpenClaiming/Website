@@ -31,6 +31,7 @@ export default function Footer() {
             <h4 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">Design</h4>
             <div className="space-y-2.5">
               <Link to="/DesignPhilosophy" className="block text-sm hover:text-white transition-colors">Philosophy</Link>
+              <Link to="/Implementations" className="block text-sm hover:text-white transition-colors">Implementations</Link>
               <Link to="/Comparison" className="block text-sm hover:text-white transition-colors">vs Other Standards</Link>
             </div>
           </div>

@@ -6,32 +6,38 @@ const useCases = [
   {
     icon: Fingerprint,
     title: "Identity Linking",
-    desc: "A domain can assert ownership of an identity.",
-    example: 'example.com claims alice@example.com\ncontrols @alice on another platform',
+    desc: "Multiple sites post claims signed by the same key.",
+    example: (
+      <span>
+        Multiple sites post claims signed by{" "}
+        <span className="text-emerald-400">alice@groups.app</span> with the same private key, at{" "}
+        <span className="text-emerald-400 whitespace-nowrap">./well-known/claiming/groups.app/alice.json</span>
+      </span>
+    ),
   },
   {
     icon: Users,
     title: "Membership",
     desc: "Organizations can publish signed membership records.",
-    example: "Community X claims\nAlice is a moderator",
+    example: "Community X claims Alice\nis an administrator",
   },
   {
     icon: Key,
     title: "Capability Delegation",
     desc: "One party grants permission to another.",
-    example: "Alice claims Bob can\npublish to stream Y",
+    example: "Alice grants Bob a role\nin a community",
   },
   {
     icon: Globe,
-    title: "Cross-Domain Trust",
-    desc: "Applications can verify identities across systems.",
-    example: "example.com claims user123\nis the same person as account456",
+    title: "Cross-Domain API Calls",
+    desc: "Server proves domain control and signs API calls.",
+    example: "Server A posts claim proving it\ncontrols Domain A, and signs API\ncalls to servers controlling Domain B",
   },
   {
     icon: Server,
     title: "Signed Observations",
     desc: "Servers can publish signed observations.",
-    example: "Server A claims the latest\nhash of stream Z is H",
+    example: "Server A claims the latest\nhash of stream S is H",
   },
   {
     icon: Link2,
@@ -64,7 +70,7 @@ export default function UseCasesSection() {
                 <h3 className="text-lg font-semibold text-gray-900">{uc.title}</h3>
                 <p className="mt-2 text-sm text-gray-500">{uc.desc}</p>
                 <div className="mt-4 p-3 rounded-lg bg-gray-950 text-gray-400 text-xs font-mono leading-relaxed whitespace-pre-line">
-                  {uc.example}
+                  {typeof uc.example === "string" ? uc.example : uc.example}
                 </div>
               </div>
             </SectionReveal>
