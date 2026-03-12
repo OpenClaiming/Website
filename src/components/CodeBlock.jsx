@@ -10,49 +10,9 @@ export default function CodeBlock({ code, language = "json", className = "" }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Simple syntax highlighting using regex patterns
   const highlightCode = (code, lang) => {
-    if (!code) return '';
-    
-    let highlighted = code;
-    
-    // Keywords for different languages
-    const keywords = {
-      javascript: /\b(import|export|class|function|const|let|var|if|else|return|try|catch|static|from|new|typeof|for|in|of)\b/g,
-      python: /\b(import|class|def|if|else|return|try|except|from|as|with|for|in|self)\b/g,
-      go: /\b(package|import|type|func|return|if|else|for|range|var|case|switch|struct)\b/g,
-      rust: /\b(use|pub|struct|impl|fn|let|mut|match|if|else|return|for|in|mod)\b/g,
-      php: /\b(class|function|public|private|static|return|if|else|try|catch|foreach|as|new)\b/g,
-      swift: /\b(import|class|func|let|var|if|else|return|try|catch|for|in|static|guard)\b/g,
-      java: /\b(class|public|private|static|void|return|if|else|try|catch|for|new|import)\b/g,
-      kotlin: /\b(class|fun|val|var|if|else|return|try|catch|for|in|object|import)\b/g,
-    };
-    
-    const langKeywords = keywords[lang] || keywords.javascript;
-    
-    // Escape HTML
-    highlighted = highlighted.replace(/[<>&]/g, (c) => ({
-      '<': '&lt;',
-      '>': '&gt;',
-      '&': '&amp;'
-    }[c]));
-    
-    // Highlight strings
-    highlighted = highlighted.replace(/(".*?"|'.*?'|`.*?`)/g, '<span style="color: #a5d6a7;">$1</span>');
-    
-    // Highlight comments
-    highlighted = highlighted.replace(/(\/\/.*$|\/\*[\s\S]*?\*\/|#.*$)/gm, '<span style="color: #757575; font-style: italic;">$1</span>');
-    
-    // Highlight keywords
-    highlighted = highlighted.replace(langKeywords, '<span style="color: #ce93d8;">$1</span>');
-    
-    // Highlight numbers
-    highlighted = highlighted.replace(/\b(\d+\.?\d*)\b/g, '<span style="color: #90caf9;">$1</span>');
-    
-    // Highlight function names
-    highlighted = highlighted.replace(/\b([a-zA-Z_]\w*)\s*\(/g, '<span style="color: #81d4fa;">$1</span>(');
-    
-    return highlighted;
+    if (!code) return code;
+    return code;
   };
 
   return (
@@ -71,7 +31,7 @@ export default function CodeBlock({ code, language = "json", className = "" }) {
         </div>
       )}
       <pre className="bg-gray-950 text-gray-300 p-6 pt-10 overflow-x-auto text-sm leading-relaxed font-mono">
-        <code dangerouslySetInnerHTML={{ __html: highlightCode(code, language) }} />
+        <code>{code}</code>
       </pre>
     </div>
   );
