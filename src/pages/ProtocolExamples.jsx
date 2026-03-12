@@ -1,0 +1,168 @@
+import DocLayout from "../components/docs/DocLayout";
+import CodeBlock from "../components/CodeBlock";
+
+export default function ProtocolExamples() {
+  return (
+    <DocLayout title="Protocol Examples">
+      <p className="lead text-lg text-gray-500 !mt-0">
+        Practical examples of how OpenClaiming may be used. These examples illustrate common real-world flows.
+      </p>
+
+      <hr />
+
+      <h1>Example 1 — Domain Identity Claim</h1>
+      <p>A domain may publish claims linking identities.</p>
+      <p><strong>Claim:</strong> example.com claims alice@example.com controls @alice on another platform</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "iss": "https://example.com",
+  "sub": "alice@example.com",
+  "stm": {
+    "linked_account": "@alice"
+  },
+  "sig": "BASE64_SIGNATURE"
+}`} language="json" />
+      <p>Publication: <code>https://example.com/.well-known/openclaim.json</code></p>
+
+      <hr />
+
+      <h1>Example 2 — Community Membership</h1>
+      <p>An organization publishes membership records.</p>
+      <p><strong>Claim:</strong> Community X claims Alice is a moderator</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "iss": "https://community.example",
+  "sub": "https://users.example/alice",
+  "stm": {
+    "role": "moderator"
+  },
+  "exp": 1750000000,
+  "sig": "BASE64_SIGNATURE"
+}`} language="json" />
+
+      <hr />
+
+      <h1>Example 3 — Capability Delegation</h1>
+      <p>A user delegates permission to another user.</p>
+      <p><strong>Claim:</strong> Alice allows Bob to publish to stream Y</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "iss": "alice",
+  "sub": "bob",
+  "stm": {
+    "permission": "publish",
+    "resource": "streamY"
+  },
+  "sig": "BASE64_SIGNATURE"
+}`} language="json" />
+
+      <hr />
+
+      <h1>Example 4 — Server Observation</h1>
+      <p>A server signs an observation about a system state.</p>
+      <p><strong>Claim:</strong> Server A claims latest hash of stream Z is H</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "iss": "serverA",
+  "stm": {
+    "stream": "Z",
+    "latest_hash": "H"
+  },
+  "sig": "BASE64_SIGNATURE"
+}`} language="json" />
+      <p>Multiple servers may independently sign observations. Conflicting claims reveal dishonest actors.</p>
+
+      <hr />
+
+      <h1>Example 5 — Cross-Domain Identity</h1>
+      <p>Two domains may confirm a shared identity.</p>
+      <p><strong>Claim:</strong> siteA claims user123 equals siteB user456</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "iss": "siteA",
+  "sub": "user123",
+  "stm": {
+    "same_as": "siteB:user456"
+  },
+  "sig": "BASE64_SIGNATURE"
+}`} language="json" />
+
+      <hr />
+
+      <h1>Example 6 — Blockchain Anchoring</h1>
+      <p>Claims can be anchored to blockchains. Instead of storing full JSON, systems may store:</p>
+      <CodeBlock code={`hash(OpenClaim)`} language="text" />
+      <p>Benefits include timestamped proof, tamper resistance, and public auditability. The claim itself remains off-chain.</p>
+
+      <hr />
+
+      <h1>Example 7 — Session Authentication</h1>
+      <p>Applications may issue claims representing active sessions.</p>
+      <p><strong>Claim:</strong> Server claims session key K belongs to user Alice</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "iss": "auth.example",
+  "sub": "alice",
+  "stm": {
+    "session_key": "PUBLIC_KEY"
+  },
+  "exp": 1712003600,
+  "sig": "BASE64_SIGNATURE"
+}`} language="json" />
+      <p>Clients can present signed requests using the session key.</p>
+
+      <hr />
+
+      <h1>Example 8 — Intercloud Attestations</h1>
+      <p>Distributed nodes may publish claims about system state.</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "iss": "nodeA",
+  "stm": {
+    "object": "X",
+    "hash": "H"
+  },
+  "sig": "BASE64_SIGNATURE"
+}`} language="json" />
+      <p>Dishonest nodes are exposed if their signatures contradict each other.</p>
+
+      <hr />
+
+      <h1>Claim Bundles</h1>
+      <p>Multiple claims may be distributed together.</p>
+      <CodeBlock code={`{
+  "claims": [
+    { ... },
+    { ... },
+    { ... }
+  ]
+}`} language="json" />
+      <p>Bundles may be used for identity profiles, organization records, and capability sets.</p>
+
+      <hr />
+
+      <h1>Verification Flow</h1>
+      <CodeBlock code={`Receive claim
+↓
+Locate issuer public key
+↓
+Canonicalize JSON
+↓
+Verify signature
+↓
+Check expiration
+↓
+Accept or reject claim`} language="text" />
+
+      <hr />
+
+      <h1>Real-World Scenarios</h1>
+      <p>OpenClaiming is applicable in many environments: identity systems, decentralized networks, access control systems, blockchain integrations, reputation systems, and distributed collaboration platforms.</p>
+
+      <hr />
+
+      <h1>Summary</h1>
+      <p>OpenClaiming provides a minimal primitive: a <strong>cryptographically signed statement</strong>. From this simple building block, systems can implement identity assertions, permission delegation, system attestations, and decentralized trust models.</p>
+    </DocLayout>
+  );
+}
