@@ -600,21 +600,96 @@ export default function Implementations() {
 
       <h1>Language Implementations</h1>
 
-      <div className="not-prose">
-        <div className="flex flex-wrap justify-center gap-2 mb-6">
-          {langOrder.map((lang) => (
-            <button
-              key={lang}
-              onClick={() => setSelected(lang)}
-              className={`px-4 py-2 text-sm font-mono rounded-lg border transition-all cursor-pointer ${
-                selected === lang
-                  ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-emerald-300"
-              }`}
-            >
-              {implementations[lang].label}
-            </button>
-          ))}
+      <div className="not-prose my-8">
+        <div className="flex flex-wrap justify-center gap-3 mb-8">
+          <button
+            onClick={() => setSelected("javascript")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "javascript"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            JavaScript
+          </button>
+          <button
+            onClick={() => setSelected("python")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "python"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            Python
+          </button>
+          <button
+            onClick={() => setSelected("go")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "go"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            Go
+          </button>
+          <button
+            onClick={() => setSelected("rust")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "rust"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            Rust
+          </button>
+          <button
+            onClick={() => setSelected("php")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "php"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            PHP
+          </button>
+          <button
+            onClick={() => setSelected("java")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "java"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            Java
+          </button>
+          <button
+            onClick={() => setSelected("kotlin")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "kotlin"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            Kotlin
+          </button>
+          <button
+            onClick={() => setSelected("swift")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "swift"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            Swift
+          </button>
         </div>
 
         <LanguageCodeBlock code={current.code} language={selected} />
