@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import SectionReveal from "../SectionReveal";
 import CodeBlock from "../CodeBlock";
-import { ArrowRight } from "lucide-react";
 
 const implementations = {
   javascript: {
@@ -161,33 +159,20 @@ export default function ImplementationsSection() {
         </SectionReveal>
 
         <SectionReveal delay={0.1}>
-          <div className="flex flex-wrap justify-center gap-2 mb-8">
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
             {Object.entries(implementations).map(([key, { label }]) => (
-              <button
+              <a
                 key={key}
-                onClick={() => setSelected(key)}
-                className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
-                  selected === key
-                    ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
-                }`}
+                href={`/Implementations#${key}`}
+                className="px-5 py-2.5 text-sm font-mono rounded-lg border transition-all bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+                style={{ cursor: 'pointer' }}
               >
                 {label}
-              </button>
+              </a>
             ))}
           </div>
 
           <CodeBlock code={current.code} language={selected} className="shadow-xl shadow-gray-900/10" />
-
-          <div className="mt-8 text-center">
-            <Link
-              to="/Implementations"
-              className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm"
-            >
-              View full documentation
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
         </SectionReveal>
       </div>
     </section>
