@@ -1,0 +1,44 @@
+import SectionReveal from "../SectionReveal";
+import { Globe, Shield, Link2, Server, Network } from "lucide-react";
+
+const needs = [
+  { icon: Globe, label: "Identities across domains" },
+  { icon: Shield, label: "Roles and permissions" },
+  { icon: Server, label: "Attestations from servers" },
+  { icon: Link2, label: "Links between accounts" },
+  { icon: Network, label: "Signed observations in decentralized systems" },
+];
+
+export default function WhySection() {
+  return (
+    <section id="why" className="bg-white py-24 sm:py-32">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionReveal>
+          <div className="max-w-3xl">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+              Why OpenClaiming
+            </h2>
+            <p className="mt-4 text-lg text-gray-500 leading-relaxed">
+              Today many systems need verifiable statements. Existing standards often require heavy infrastructure.
+              OpenClaiming focuses on a simpler primitive:
+            </p>
+            <p className="mt-3 text-xl font-semibold text-gray-900">
+              A signed claim that anyone can verify.
+            </p>
+          </div>
+        </SectionReveal>
+
+        <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {needs.map((item, i) => (
+            <SectionReveal key={item.label} delay={i * 0.08}>
+              <div className="flex items-start gap-3 p-5 rounded-xl bg-gray-50 border border-gray-100 hover:border-emerald-200 hover:shadow-md hover:shadow-emerald-500/5 transition-all">
+                <item.icon className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span className="text-sm font-medium text-gray-700">{item.label}</span>
+              </div>
+            </SectionReveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
