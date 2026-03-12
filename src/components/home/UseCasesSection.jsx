@@ -11,7 +11,7 @@ const useCases = [
       <span>
         Multiple sites post claims signed by{" "}
         <span className="text-emerald-400">alice@groups.app</span> with the same private key, at{" "}
-        <span className="text-emerald-400 whitespace-nowrap">./well-known/claiming/groups.app/alice.json</span>
+        <span className="text-emerald-400 whitespace-nowrap">./well-known/openclaiming/groups.app/alice.json</span>
       </span>
     ),
   },
