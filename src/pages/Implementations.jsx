@@ -460,27 +460,117 @@ class OpenClaims {
   },
   java: {
     label: "Java",
-    code: `// Reference implementation coming soon
+    code: `// Reference implementation in progress
 // Will expose OpenClaims class with:
-//   canonicalize(claim)
-//   sign(claim, privateKey)
-//   verify(claim, publicKey)`,
+//
+//   OpenClaims.canonicalize(claim)
+//   OpenClaims.sign(claim, privateKey)
+//   OpenClaims.verify(claim, publicKey)
+//
+// Uses java.security and com.fasterxml.jackson
+// for JSON processing and ECDSA P-256 signatures`,
   },
   kotlin: {
     label: "Kotlin",
-    code: `// Reference implementation coming soon
+    code: `// Reference implementation in progress
 // Will expose OpenClaims object with:
-//   canonicalize(claim)
-//   sign(claim, privateKey)
-//   verify(claim, publicKey)`,
+//
+//   OpenClaims.canonicalize(claim)
+//   OpenClaims.sign(claim, privateKey)
+//   OpenClaims.verify(claim, publicKey)
+//
+// Uses kotlinx.serialization and java.security
+// for JSON processing and ECDSA P-256 signatures`,
   },
   swift: {
     label: "Swift",
-    code: `// Reference implementation coming soon
-// Will expose OpenClaims class with:
-//   canonicalize(claim)
-//   sign(claim, privateKey)
-//   verify(claim, publicKey)`,
+    code: `import Foundation
+import CryptoKit
+
+class OpenClaim {
+
+  static func normalize(_ value: Any) -> Any {
+
+    if let dict = value as? [String: Any] {
+
+      let sortedKeys = dict.keys.sorted()
+      var result: [String: Any] = [:]
+
+      for key in sortedKeys {
+        result[key] = normalize(dict[key]!)
+      }
+
+      return result
+    }
+
+    if let array = value as? [Any] {
+      return array.map { normalize($0) }
+    }
+
+    if let num = value as? Double {
+
+      var s = String(format: "%.15g", num)
+
+      while s.last == "0" {
+        s.removeLast()
+      }
+
+      if s.last == "." {
+        s.removeLast()
+      }
+
+      return s
+    }
+
+    return value
+  }
+
+  static func canonicalize(_ claim: [String: Any]) throws -> Data {
+
+    var obj = claim
+    obj.removeValue(forKey: "sig")
+
+    let normalized = normalize(obj)
+
+    let data = try JSONSerialization.data(
+      withJSONObject: normalized,
+      options: []
+    )
+
+    return data
+  }
+
+  static func sign(_ claim: [String: Any], privateKey: P256.Signing.PrivateKey) throws -> [String: Any] {
+
+    let canon = try canonicalize(claim)
+
+    let hash = SHA256.hash(data: canon)
+
+    let signature = try privateKey.signature(for: hash)
+
+    var newClaim = claim
+    newClaim["sig"] = Data(signature.derRepresentation).base64EncodedString()
+
+    return newClaim
+  }
+
+  static func verify(_ claim: [String: Any], publicKey: P256.Signing.PublicKey) throws -> Bool {
+
+    guard let sigB64 = claim["sig"] as? String,
+          let sigData = Data(base64Encoded: sigB64)
+    else {
+      return false
+    }
+
+    let canon = try canonicalize(claim)
+
+    let hash = SHA256.hash(data: canon)
+
+    let signature = try P256.Signing.ECDSASignature(derRepresentation: sigData)
+
+    return publicKey.isValidSignature(signature, for: hash)
+  }
+}`,
   },
 };
 
