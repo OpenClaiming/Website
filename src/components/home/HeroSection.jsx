@@ -40,24 +40,56 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="mt-10 flex flex-col items-center justify-center gap-6"
         >
-          <a
-            href="https://github.com/OpenClaiming"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-all hover:shadow-lg hover:shadow-white/10 text-base"
-          >
-            <Github className="w-5 h-5" />
-            View on GitHub
-          </a>
-          <a
-            href="#why"
-            className="inline-flex items-center gap-2 px-6 py-4 text-gray-400 hover:text-white transition-colors text-base"
-          >
-            Learn more
-            <ArrowDown className="w-4 h-4" />
-          </a>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="https://github.com/OpenClaiming"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-all hover:shadow-lg hover:shadow-white/10 text-base"
+            >
+              <Github className="w-5 h-5" />
+              View on GitHub
+            </a>
+            <a
+              href="#why"
+              className="inline-flex items-center gap-2 px-6 py-4 text-gray-400 hover:text-white transition-colors text-base"
+            >
+              Learn more
+              <ArrowDown className="w-4 h-4" />
+            </a>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2 mt-2">
+            {[
+              { key: "javascript", label: "JavaScript" },
+              { key: "python", label: "Python" },
+              { key: "go", label: "Go" },
+              { key: "rust", label: "Rust" },
+              { key: "php", label: "PHP" },
+              { key: "java", label: "Java" },
+              { key: "swift", label: "Swift" },
+            ].map(({ key, label }) => (
+              <a
+                key={key}
+                href={`/Implementations#${key}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = `/Implementations#${key}`;
+                  setTimeout(() => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }, 100);
+                }}
+                className="px-3 py-1.5 text-xs font-mono rounded-md border border-gray-700 text-gray-400 hover:border-emerald-500 hover:text-emerald-400 transition-all"
+              >
+                {label}
+              </a>
+            ))}
+          </div>
         </motion.div>
       </div>
 
