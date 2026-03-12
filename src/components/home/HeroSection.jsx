@@ -4,15 +4,16 @@ import { Github, ArrowDown } from "lucide-react";
 export default function HeroSection() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center bg-black overflow-hidden">
-      {/* Animated grid background */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-        backgroundSize: '60px 60px'
-      }} />
-
-      {/* Gradient orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-emerald-400/3 rounded-full blur-3xl" />
+      {/* Hero illustration background */}
+      <div 
+        className="absolute inset-0 opacity-20 bg-cover bg-center"
+        style={{
+          backgroundImage: `url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69b3351d41135100b98fe3b3/99283cd23_generated_image.png')`
+        }}
+      />
+      
+      {/* Overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center">
         <motion.h1
