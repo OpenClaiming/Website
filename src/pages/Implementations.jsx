@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DocLayout from "../components/docs/DocLayout";
 import CodeBlock from "../components/CodeBlock";
 
@@ -657,7 +657,7 @@ export default function Implementations() {
   const [selected, setSelected] = useState("javascript");
   const current = implementations[selected];
 
-  React.useEffect(() => {
+  useEffect(() => {
     const hash = window.location.hash.substring(1);
     if (hash && implementations[hash]) {
       setSelected(hash);
