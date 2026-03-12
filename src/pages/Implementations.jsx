@@ -460,27 +460,101 @@ class OpenClaims {
   },
   java: {
     label: "Java",
-    code: `// Reference implementation in progress
-// Will expose OpenClaims class with:
-//
-//   OpenClaims.canonicalize(claim)
-//   OpenClaims.sign(claim, privateKey)
-//   OpenClaims.verify(claim, publicKey)
-//
-// Uses java.security and com.fasterxml.jackson
-// for JSON processing and ECDSA P-256 signatures`,
-  },
-  kotlin: {
-    label: "Kotlin",
-    code: `// Reference implementation in progress
-// Will expose OpenClaims object with:
-//
-//   OpenClaims.canonicalize(claim)
-//   OpenClaims.sign(claim, privateKey)
-//   OpenClaims.verify(claim, publicKey)
-//
-// Uses kotlinx.serialization and java.security
-// for JSON processing and ECDSA P-256 signatures`,
+    code: `// Optional strict canonicalizer:
+// https://github.com/erdtman/java-json-canonicalization
+
+import java.util.*;
+import java.security.*;
+import java.util.Base64;
+
+public class OpenClaims {
+
+	static Object normalize(Object v) {
+
+		if (v instanceof Map) {
+
+			Map<String,Object> map = new TreeMap<>();
+
+			((Map<String,Object>)v).forEach(
+				(k,val) -> map.put(k, normalize(val))
+			);
+
+			return map;
+		}
+
+		if (v instanceof List) {
+
+			List<Object> out = new ArrayList<>();
+
+			for (Object o : (List)v)
+				out.add(normalize(o));
+
+			return out;
+		}
+
+		if (v instanceof Double) {
+			return Double.toString((Double)v);
+		}
+
+		return v;
+	}
+
+	public static String canonicalize(Map<String,Object> claim) throws Exception {
+
+		Map<String,Object> obj = new HashMap<>(claim);
+
+		obj.remove("sig");
+
+		Object sorted = normalize(obj);
+
+		return new com.fasterxml.jackson.databind.ObjectMapper()
+			.writeValueAsString(sorted);
+	}
+
+	public static Map<String,Object> sign(Map<String,Object> claim, PrivateKey key) throws Exception {
+
+		String canon = canonicalize(claim);
+
+		MessageDigest sha = MessageDigest.getInstance("SHA-256");
+
+		byte[] hash = sha.digest(canon.getBytes());
+
+		Signature sig = Signature.getInstance("SHA256withECDSA");
+
+		sig.initSign(key);
+
+		sig.update(hash);
+
+		byte[] s = sig.sign();
+
+		claim.put("sig", Base64.getEncoder().encodeToString(s));
+
+		return claim;
+	}
+
+	public static boolean verify(Map<String,Object> claim, PublicKey key) throws Exception {
+
+		if (!claim.containsKey("sig")) return false;
+
+		String sig64 = (String)claim.get("sig");
+
+		byte[] signature = Base64.getDecoder().decode(sig64);
+
+		String canon = canonicalize(claim);
+
+		byte[] hash = MessageDigest
+			.getInstance("SHA-256")
+			.digest(canon.getBytes());
+
+		Signature sig = Signature.getInstance("SHA256withECDSA");
+
+		sig.initVerify(key);
+
+		sig.update(hash);
+
+		return sig.verify(signature);
+	}
+}`,
   },
   swift: {
     label: "Swift",
@@ -574,7 +648,7 @@ class OpenClaim {
   },
 };
 
-const langOrder = ["javascript", "python", "go", "rust", "php", "java", "kotlin", "swift"];
+const langOrder = ["javascript", "python", "go", "rust", "php", "java", "swift"];
 
 export default function Implementations() {
   const [selected, setSelected] = useState("javascript");
@@ -667,17 +741,6 @@ export default function Implementations() {
             style={{ cursor: 'pointer' }}
           >
             Java
-          </button>
-          <button
-            onClick={() => setSelected("kotlin")}
-            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
-              selected === "kotlin"
-                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
-                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
-            }`}
-            style={{ cursor: 'pointer' }}
-          >
-            Kotlin
           </button>
           <button
             onClick={() => setSelected("swift")}
