@@ -692,7 +692,7 @@ export default function Implementations() {
           </button>
         </div>
 
-        <LanguageCodeBlock code={current.code} language={selected} />
+        <CodeBlock code={current.code} language={selected} />
       </div>
 
       <hr />
