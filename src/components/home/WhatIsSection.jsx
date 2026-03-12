@@ -38,16 +38,18 @@ export default function WhatIsSection() {
             </SectionReveal>
 
             <SectionReveal delay={0.15}>
-              <div className="mt-8 space-y-3">
-                <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">An OpenClaim states:</p>
-                {states.map((s, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg hover:bg-white transition-colors">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                      <s.icon className="w-4 h-4 text-emerald-600" />
+              <div className="mt-8">
+                <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">An OpenClaim states:</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {states.map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 p-4 rounded-lg bg-white border border-gray-100 hover:border-emerald-200 transition-colors">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                        <s.icon className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <span className="text-gray-700 font-medium text-sm">{s.text}</span>
                     </div>
-                    <span className="text-gray-700 font-medium text-sm">{s.text}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </SectionReveal>
           </div>

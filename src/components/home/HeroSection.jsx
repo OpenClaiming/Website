@@ -15,17 +15,6 @@ export default function HeroSection() {
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-emerald-400/3 rounded-full blur-3xl" />
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-gray-800 text-gray-400 text-sm mb-8 bg-white/[0.02]">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Open Protocol · v1
-          </div>
-        </motion.div>
-
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

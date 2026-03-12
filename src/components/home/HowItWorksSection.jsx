@@ -21,19 +21,18 @@ export default function HowItWorksSection() {
           </p>
         </SectionReveal>
 
-        <div className="mt-16 relative">
-          {/* Connecting line */}
-          <div className="hidden lg:block absolute top-12 left-[2.5rem] right-[2.5rem] h-px bg-gradient-to-r from-gray-200 via-emerald-200 to-gray-200" />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="mt-16">
+          <div className="max-w-2xl space-y-6">
             {steps.map((step, i) => (
               <SectionReveal key={step.num} delay={i * 0.1}>
-                <div className="relative text-center lg:text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gray-50 border border-gray-100 mb-4 relative z-10">
-                    <span className="text-2xl font-bold text-emerald-500 font-mono">{step.num}</span>
+                <div className="flex gap-4 items-start p-6 rounded-xl bg-gray-50 border border-gray-100 hover:border-emerald-200 transition-colors">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
+                    <span className="text-xl font-bold text-emerald-500 font-mono">{step.num}</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">{step.title}</h3>
-                  <p className="mt-2 text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{step.title}</h3>
+                    <p className="mt-1 text-sm text-gray-600 leading-relaxed">{step.desc}</p>
+                  </div>
                 </div>
               </SectionReveal>
             ))}
