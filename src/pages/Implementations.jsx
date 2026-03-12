@@ -1,6 +1,6 @@
 import { useState } from "react";
 import DocLayout from "../components/docs/DocLayout";
-import LanguageCodeBlock from "../components/LanguageCodeBlock";
+import CodeBlock from "../components/CodeBlock";
 
 const implementations = {
   javascript: {
