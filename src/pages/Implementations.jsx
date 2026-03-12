@@ -41,7 +41,7 @@ function normalize(v) {
   return v
 }
 
-export class OpenClaims {
+export class OpenClaim {
 
   static canonicalize(claim) {
 
@@ -57,7 +57,7 @@ export class OpenClaims {
 
   static sign(claim, privateKeyPem) {
 
-    const canon = OpenClaims.canonicalize(claim)
+    const canon = OpenClaim.canonicalize(claim)
 
     const hash = crypto
       .createHash("sha256")
@@ -80,7 +80,7 @@ export class OpenClaims {
 
     if (!claim.sig) return false
 
-    const canon = OpenClaims.canonicalize(claim)
+    const canon = OpenClaim.canonicalize(claim)
 
     const hash = crypto
       .createHash("sha256")
@@ -112,16 +112,16 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import hashes
 
 
-class OpenClaims:
+class OpenClaim:
 
   @staticmethod
   def normalize(v):
 
     if isinstance(v, dict):
-      return {k: OpenClaims.normalize(v[k]) for k in sorted(v)}
+      return {k: OpenClaim.normalize(v[k]) for k in sorted(v)}
 
     if isinstance(v, list):
-      return [OpenClaims.normalize(x) for x in v]
+      return [OpenClaim.normalize(x) for x in v]
 
     if isinstance(v, float):
       return format(v,".15g")
@@ -137,7 +137,7 @@ class OpenClaims:
     if "sig" in obj:
       del obj["sig"]
 
-    n = OpenClaims.normalize(obj)
+    n = OpenClaim.normalize(obj)
 
     return json.dumps(n,separators=(",",":"))
 
@@ -145,7 +145,7 @@ class OpenClaims:
   @staticmethod
   def sign(claim,private_key):
 
-    canon = OpenClaims.canonicalize(claim).encode()
+    canon = OpenClaim.canonicalize(claim).encode()
 
     hash = hashlib.sha256(canon).digest()
 
@@ -164,7 +164,7 @@ class OpenClaims:
 
     sig = base64.b64decode(claim["sig"])
 
-    canon = OpenClaims.canonicalize(claim).encode()
+    canon = OpenClaim.canonicalize(claim).encode()
 
     hash = hashlib.sha256(canon).digest()
 
@@ -192,7 +192,7 @@ import (
   "strconv"
 )
 
-type OpenClaims struct{}
+type OpenClaim struct{}
 
 func normalize(v interface{}) interface{} {
 
@@ -230,7 +230,7 @@ func normalize(v interface{}) interface{} {
   return v
 }
 
-func (OpenClaims) Canonicalize(claim map[string]interface{}) ([]byte,error) {
+func (OpenClaim) Canonicalize(claim map[string]interface{}) ([]byte,error) {
 
   obj := map[string]interface{}{}
 
@@ -243,7 +243,7 @@ func (OpenClaims) Canonicalize(claim map[string]interface{}) ([]byte,error) {
   return json.Marshal(normalize(obj))
 }
 
-func (o OpenClaims) Sign(claim map[string]interface{},priv *ecdsa.PrivateKey) (map[string]interface{},error) {
+func (o OpenClaim) Sign(claim map[string]interface{},priv *ecdsa.PrivateKey) (map[string]interface{},error) {
 
   canon,_ := o.Canonicalize(claim)
 
@@ -259,7 +259,7 @@ func (o OpenClaims) Sign(claim map[string]interface{},priv *ecdsa.PrivateKey) (m
   return claim,nil
 }
 
-func (o OpenClaims) Verify(claim map[string]interface{},pub *ecdsa.PublicKey) bool {
+func (o OpenClaim) Verify(claim map[string]interface{},pub *ecdsa.PublicKey) bool {
 
   sigB64,ok := claim["sig"].(string)
   if !ok { return false }
@@ -291,9 +291,9 @@ use p256::ecdsa::signature::{Signer,Verifier};
 use base64::{encode,decode};
 use ryu::Buffer;
 
-pub struct OpenClaims;
+pub struct OpenClaim;
 
-impl OpenClaims {
+impl OpenClaim {
 
   fn normalize(v: Value) -> Value {
 
@@ -392,7 +392,7 @@ impl OpenClaims {
 // Optional strict canonicalizer:
 // https://github.com/cyberphone/json-canonicalization
 
-class OpenClaims {
+class OpenClaim {
 
   private static function normalize($v) {
 
@@ -467,7 +467,7 @@ import java.util.*;
 import java.security.*;
 import java.util.Base64;
 
-public class OpenClaims {
+public class OpenClaim {
 
 	static Object normalize(Object v) {
 
@@ -673,7 +673,7 @@ export default function Implementations() {
   return (
     <DocLayout title="Reference Implementations">
       <p className="lead text-lg text-gray-500 !mt-0">
-        Reference libraries exposing a single <code>OpenClaims</code> class with consistent methods across all languages.
+        Reference libraries exposing a single <code>OpenClaim</code> class with consistent methods across all languages.
       </p>
 
       <hr />
@@ -681,9 +681,9 @@ export default function Implementations() {
       <h1>Core Methods</h1>
       <p>All implementations provide three core methods:</p>
       <ul>
-        <li><code>OpenClaims.canonicalize(claim)</code> — Removes <code>sig</code>, deep sorts keys, normalizes numbers, returns UTF-8 JSON</li>
-        <li><code>OpenClaims.sign(claim, privateKey)</code> — Canonicalizes, hashes with SHA-256, signs with ECDSA P-256, returns claim with base64 signature</li>
-        <li><code>OpenClaims.verify(claim, publicKey)</code> — Verifies the signature, returns boolean</li>
+        <li><code>OpenClaim.canonicalize(claim)</code> — Removes <code>sig</code>, deep sorts keys, normalizes numbers, returns UTF-8 JSON</li>
+        <li><code>OpenClaim.sign(claim, privateKey)</code> — Canonicalizes, hashes with SHA-256, signs with ECDSA P-256, returns claim with base64 signature</li>
+        <li><code>OpenClaim.verify(claim, publicKey)</code> — Verifies the signature, returns boolean</li>
       </ul>
 
       <hr />
