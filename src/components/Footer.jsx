@@ -21,18 +21,18 @@ export default function Footer() {
           <div>
             <h4 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">Protocol</h4>
             <div className="space-y-2.5">
-              <Link to="/Docs" className="block text-sm hover:text-white transition-colors">Documentation</Link>
-              <Link to="/SecurityModel" className="block text-sm hover:text-white transition-colors">Security Model</Link>
-              <Link to="/ProtocolExamples" className="block text-sm hover:text-white transition-colors">Examples</Link>
+              <Link to="/Docs" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="block text-sm hover:text-white transition-colors">Documentation</Link>
+              <Link to="/SecurityModel" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="block text-sm hover:text-white transition-colors">Security Model</Link>
+              <Link to="/ProtocolExamples" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="block text-sm hover:text-white transition-colors">Examples</Link>
             </div>
           </div>
 
           <div>
             <h4 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">Design</h4>
             <div className="space-y-2.5">
-              <Link to="/DesignPhilosophy" className="block text-sm hover:text-white transition-colors">Philosophy</Link>
-              <Link to="/Implementations" className="block text-sm hover:text-white transition-colors">Implementations</Link>
-              <Link to="/Comparison" className="block text-sm hover:text-white transition-colors">vs Other Standards</Link>
+              <Link to="/DesignPhilosophy" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="block text-sm hover:text-white transition-colors">Philosophy</Link>
+              <Link to="/Implementations" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="block text-sm hover:text-white transition-colors">Implementations</Link>
+              <Link to="/Comparison" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="block text-sm hover:text-white transition-colors">vs Other Standards</Link>
             </div>
           </div>
 
