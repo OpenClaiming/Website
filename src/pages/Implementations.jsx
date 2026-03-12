@@ -558,7 +558,10 @@ public class OpenClaims {
   },
   swift: {
     label: "Swift",
-    code: `import Foundation
+    code: `// Optional strict canonicalizer:
+// https://github.com/erdtman/swift-json-canonicalization
+
+import Foundation
 import CryptoKit
 
 class OpenClaim {

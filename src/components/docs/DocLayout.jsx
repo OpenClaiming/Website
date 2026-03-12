@@ -67,28 +67,136 @@ export default function DocLayout({ title, children }) {
           </div>
 
           {/* Content */}
-          <div className="prose prose-gray max-w-none
-            prose-headings:tracking-tight prose-headings:font-bold
-            prose-h1:text-4xl prose-h1:mt-16 prose-h1:mb-8 prose-h1:first:mt-0 prose-h1:pb-4 prose-h1:border-b-2 prose-h1:border-gray-200 prose-h1:text-gray-900
-            prose-h2:text-2xl prose-h2:mt-14 prose-h2:mb-5 prose-h2:text-gray-900
-            prose-h3:text-xl prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-gray-800 prose-h3:font-semibold
-            prose-p:text-base prose-p:text-gray-700 prose-p:leading-[1.8] prose-p:mb-5
-            prose-li:text-base prose-li:text-gray-700 prose-li:leading-[1.8] prose-li:mb-3
-            prose-ul:space-y-3 prose-ul:my-6 prose-ul:pl-6
-            prose-ol:space-y-3 prose-ol:my-6 prose-ol:pl-6
-            prose-strong:text-gray-900 prose-strong:font-semibold
-            prose-code:text-emerald-700 prose-code:bg-emerald-50 prose-code:px-2 prose-code:py-1 prose-code:rounded-md prose-code:text-[0.9em] prose-code:font-mono prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
-            prose-pre:bg-gray-950 prose-pre:text-gray-300 prose-pre:rounded-xl prose-pre:shadow-xl prose-pre:my-8 prose-pre:border prose-pre:border-gray-800
-            prose-table:border-collapse prose-table:my-8 prose-table:w-full
-            prose-th:text-left prose-th:text-sm prose-th:font-semibold prose-th:text-gray-900 prose-th:px-4 prose-th:py-3 prose-th:bg-gray-50 prose-th:border prose-th:border-gray-200
-            prose-td:text-sm prose-td:text-gray-700 prose-td:px-4 prose-td:py-3 prose-td:border prose-td:border-gray-100
-            prose-hr:border-gray-200 prose-hr:my-14
-            prose-blockquote:border-l-4 prose-blockquote:border-emerald-500 prose-blockquote:text-gray-800 prose-blockquote:bg-emerald-50/50 prose-blockquote:rounded-r-lg prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:my-8 prose-blockquote:font-normal prose-blockquote:italic
-            prose-a:text-emerald-600 prose-a:no-underline prose-a:font-medium prose-a:transition-colors hover:prose-a:underline hover:prose-a:text-emerald-700
-            [&_.lead]:text-xl [&_.lead]:text-gray-600 [&_.lead]:leading-relaxed [&_.lead]:mb-8
-          ">
+          <article className="doc-content">
+            <style>{`
+              .doc-content h1 {
+                font-size: 2.25rem;
+                font-weight: 700;
+                color: #111827;
+                margin-top: 4rem;
+                margin-bottom: 2rem;
+                padding-bottom: 1rem;
+                border-bottom: 2px solid #e5e7eb;
+                line-height: 1.2;
+              }
+              .doc-content h1:first-child {
+                margin-top: 0;
+              }
+              .doc-content h2 {
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: #111827;
+                margin-top: 3.5rem;
+                margin-bottom: 1.25rem;
+                line-height: 1.3;
+              }
+              .doc-content h3 {
+                font-size: 1.375rem;
+                font-weight: 600;
+                color: #1f2937;
+                margin-top: 2.5rem;
+                margin-bottom: 1rem;
+                line-height: 1.4;
+              }
+              .doc-content p {
+                font-size: 1rem;
+                color: #374151;
+                line-height: 1.8;
+                margin-bottom: 1.25rem;
+              }
+              .doc-content .lead {
+                font-size: 1.25rem;
+                color: #6b7280;
+                line-height: 1.7;
+                margin-bottom: 2rem;
+              }
+              .doc-content ul, .doc-content ol {
+                margin: 1.5rem 0;
+                padding-left: 1.5rem;
+              }
+              .doc-content li {
+                font-size: 1rem;
+                color: #374151;
+                line-height: 1.8;
+                margin-bottom: 0.75rem;
+              }
+              .doc-content strong {
+                font-weight: 600;
+                color: #111827;
+              }
+              .doc-content code {
+                background: #ecfdf5;
+                color: #047857;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.375rem;
+                font-size: 0.9em;
+                font-family: ui-monospace, monospace;
+                font-weight: 500;
+              }
+              .doc-content pre {
+                background: #030712;
+                color: #d1d5db;
+                padding: 1.5rem;
+                border-radius: 0.75rem;
+                overflow-x: auto;
+                margin: 2rem 0;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                border: 1px solid #1f2937;
+              }
+              .doc-content pre code {
+                background: transparent;
+                color: inherit;
+                padding: 0;
+                border-radius: 0;
+                font-size: 0.875rem;
+              }
+              .doc-content hr {
+                border: 0;
+                border-top: 1px solid #e5e7eb;
+                margin: 3.5rem 0;
+              }
+              .doc-content blockquote {
+                border-left: 4px solid #10b981;
+                background: #ecfdf5;
+                padding: 1rem 1.5rem;
+                margin: 2rem 0;
+                border-radius: 0 0.5rem 0.5rem 0;
+                color: #1f2937;
+                font-style: italic;
+              }
+              .doc-content a {
+                color: #059669;
+                text-decoration: none;
+                font-weight: 500;
+                transition: color 0.2s;
+              }
+              .doc-content a:hover {
+                color: #047857;
+                text-decoration: underline;
+              }
+              .doc-content table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 2rem 0;
+              }
+              .doc-content th {
+                background: #f9fafb;
+                color: #111827;
+                font-weight: 600;
+                font-size: 0.875rem;
+                text-align: left;
+                padding: 0.75rem 1rem;
+                border: 1px solid #e5e7eb;
+              }
+              .doc-content td {
+                color: #374151;
+                font-size: 0.875rem;
+                padding: 0.75rem 1rem;
+                border: 1px solid #f3f4f6;
+              }
+            `}</style>
             {children}
-          </div>
+          </article>
         </div>
       </div>
     </div>
