@@ -108,25 +108,22 @@ export default function Comparison() {
       <hr />
 
       <h1>Why OpenClaiming Exists</h1>
-      <p>OpenClaiming focuses on a simple goal:</p>
+      <p>While other standards require substantial infrastructure, OpenClaiming reduces the problem to its essence:</p>
       <CodeBlock code={`make signed statements easy to create and verify`} language="text" />
-      <p>Many existing standards require substantial infrastructure. OpenClaiming attempts to reduce the problem to a minimal primitive that can be reused across systems.</p>
 
       <hr />
 
       <h1>Complementary, Not Competitive</h1>
-      <p>OpenClaiming is not intended to replace existing standards. Instead, it complements them.</p>
+      <p>OpenClaiming works alongside existing standards—not against them. Each layer serves a purpose:</p>
       <CodeBlock code={`DID → identity
 OpenClaim → signed statement
 Blockchain → timestamp anchoring`} language="text" />
-      <p>Each layer solves a different problem.</p>
 
       <hr />
 
       <h1>Summary</h1>
-      <p>OpenClaiming provides a minimal primitive for verifiable statements.</p>
+      <p>Simple, decentralized, interoperable:</p>
       <CodeBlock code={`issuer signs statement about subject`} language="text" />
-      <p>Because the protocol is simple and decentralized, it can be used across many systems while remaining easy to implement.</p>
     </DocLayout>
   );
 }

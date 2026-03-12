@@ -5,26 +5,21 @@ export default function DesignPhilosophy() {
   return (
     <DocLayout title="Design Philosophy">
       <p className="lead text-lg text-gray-500 !mt-0">
-        The OpenClaiming Protocol was designed to provide a minimal primitive for publishing and verifying cryptographically signed statements.
+        OpenClaiming provides a minimal primitive for publishing and verifying cryptographically signed statements—a foundation for building decentralized trust systems.
       </p>
-      <blockquote>
-        <p>A cryptographically signed claim that anyone can verify.</p>
-      </blockquote>
-      <p>From this primitive, more complex trust systems can be constructed.</p>
 
       <hr />
 
       <h1>The Problem</h1>
-      <p>Modern distributed systems frequently need to answer questions such as:</p>
+      <p>Distributed systems need to establish trust without centralized authorities. Questions arise constantly:</p>
       <ul>
         <li>Who controls this identity?</li>
         <li>Does this user belong to this organization?</li>
-        <li>Has a server observed a particular system state?</li>
         <li>Did a trusted party delegate permission?</li>
         <li>Are two accounts controlled by the same entity?</li>
       </ul>
-      <p>Many existing solutions attempt to solve these problems through large frameworks — decentralized identity stacks, credential systems, complex schema registries, and centralized authorities. While these systems provide powerful capabilities, they often introduce significant complexity.</p>
-      <p>In many situations, all that is needed is a <strong>signed statement</strong>.</p>
+      <p>Existing solutions often require complex infrastructure—decentralized identity stacks, credential frameworks, schema registries. While powerful, they introduce significant overhead.</p>
+      <p>OpenClaiming asks: what if all you need is a <strong>cryptographically signed statement</strong>?</p>
 
       <hr />
 
@@ -42,20 +37,17 @@ export default function DesignPhilosophy() {
       <hr />
 
       <h1>Minimal Surface Area</h1>
-      <p>One of the primary goals of OpenClaiming is to minimize the protocol surface area. The core specification defines only a small set of fields: version, issuer, subject, statement, optional timestamps, and signature.</p>
-      <p>This small set of primitives allows the protocol to remain easy to implement and audit.</p>
+      <p>The core specification defines only essential fields: version, issuer, subject, statement, timestamps, and signature. This minimal design keeps implementations simple and auditable.</p>
 
       <hr />
 
-      <h1>JSON as a Universal Format</h1>
-      <p>OpenClaiming uses JSON as its base format because JSON is widely supported, human-readable, and natively supported by most programming languages.</p>
-      <p>To ensure consistent signatures across languages, OpenClaiming uses <strong>RFC 8785 JSON Canonicalization</strong>. Canonicalization ensures that two implementations will produce the same byte representation for the same claim.</p>
+      <h1>JSON as the Universal Format</h1>
+      <p>OpenClaiming uses JSON for its universal support and human readability. To ensure consistent signatures across implementations, we use <strong>RFC 8785 JSON Canonicalization</strong>—guaranteeing identical byte representations regardless of language or library.</p>
 
       <hr />
 
       <h1>Cryptography First</h1>
-      <p>OpenClaiming places cryptographic signatures at the center of the protocol. The signature ensures authenticity, integrity, and verifiability.</p>
-      <p>The protocol does not require trusted registries, centralized authorities, or specific identity systems. Instead, trust is established through cryptographic verification.</p>
+      <p>Cryptographic signatures provide authenticity, integrity, and verifiability without trusted intermediaries. No registries, no central authorities—just public-key cryptography.</p>
 
       <hr />
 
@@ -82,13 +74,12 @@ export default function DesignPhilosophy() {
       <hr />
 
       <h1>Simplicity over Completeness</h1>
-      <p>Many identity standards attempt to anticipate every possible use case, resulting in complex schemas, layered protocols, and high implementation costs.</p>
-      <p>OpenClaiming intentionally avoids this approach. Instead, the protocol provides a minimal primitive that can be extended by applications.</p>
+      <p>Most identity standards try to solve everything upfront, creating complex schemas and high implementation costs. OpenClaiming takes the opposite approach: provide a minimal primitive, let applications extend it as needed.</p>
 
       <hr />
 
       <h1>Transparency and Accountability</h1>
-      <p>In decentralized systems, signatures create accountability. If an issuer signs contradictory claims, those signatures become public evidence. This creates a <strong>chilling effect</strong>, discouraging dishonest behavior without requiring centralized enforcement.</p>
+      <p>Signatures create accountability. Contradictory claims become public evidence of dishonesty—a natural deterrent that works without centralized enforcement.</p>
 
       <hr />
 
@@ -98,8 +89,7 @@ export default function DesignPhilosophy() {
       <hr />
 
       <h1>Future Evolution</h1>
-      <p>OpenClaim v1 focuses on simplicity and broad compatibility. Future versions may introduce optional features such as multisignature claims, embedded public keys, Merkle proofs, claim bundles, and revocation mechanisms.</p>
-      <p>However, the core design principle remains unchanged:</p>
+      <p>Future versions may add optional features—multisignatures, embedded keys, Merkle proofs, revocation. But the core principle stays the same:</p>
       <CodeBlock code={`issuer signs statement about subject`} language="text" />
 
       <hr />
@@ -111,9 +101,9 @@ export default function DesignPhilosophy() {
       <hr />
 
       <h1>Summary</h1>
-      <p>OpenClaiming is built around a simple idea:</p>
+      <p>OpenClaiming reduces trust to its simplest form:</p>
       <CodeBlock code={`A signed statement that anyone can verify.`} language="text" />
-      <p>This small primitive enables powerful systems when combined with application logic, trust policies, and decentralized infrastructure.</p>
+      <p>From this primitive, powerful systems emerge.</p>
     </DocLayout>
   );
 }
