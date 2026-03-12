@@ -1,6 +1,6 @@
 import { useState } from "react";
 import DocLayout from "../components/docs/DocLayout";
-import CodeBlock from "../components/CodeBlock";
+import LanguageCodeBlock from "../components/LanguageCodeBlock";
 
 const implementations = {
   javascript: {
@@ -606,7 +606,7 @@ export default function Implementations() {
             <button
               key={lang}
               onClick={() => setSelected(lang)}
-              className={`px-4 py-2 text-sm font-mono rounded-lg border transition-all ${
+              className={`px-4 py-2 text-sm font-mono rounded-lg border transition-all cursor-pointer ${
                 selected === lang
                   ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
                   : "bg-white text-gray-600 border-gray-200 hover:border-emerald-300"
@@ -617,7 +617,7 @@ export default function Implementations() {
           ))}
         </div>
 
-        <CodeBlock code={current.code} language={selected} />
+        <LanguageCodeBlock code={current.code} language={selected} />
       </div>
 
       <hr />
