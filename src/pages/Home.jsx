@@ -5,7 +5,6 @@ import HowItWorksSection from "../components/home/HowItWorksSection";
 import KeyPropertiesSection from "../components/home/KeyPropertiesSection";
 import UseCasesSection from "../components/home/UseCasesSection";
 import ComparisonSection from "../components/home/ComparisonSection";
-import ImplementationsSection from "../components/home/ImplementationsSection";
 import GetStartedSection from "../components/home/GetStartedSection";
 
 export default function Home() {
@@ -18,7 +17,6 @@ export default function Home() {
       <KeyPropertiesSection />
       <UseCasesSection />
       <ComparisonSection />
-      <ImplementationsSection />
       <GetStartedSection />
     </div>
   );
