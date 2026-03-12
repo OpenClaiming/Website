@@ -30,11 +30,10 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.1]"
+          className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]"
         >
-          Open Claiming{" "}
           <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-            Protocol
+            Open Claiming Protocol
           </span>
         </motion.h1>
 
@@ -44,23 +43,13 @@ export default function HeroSection() {
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed"
         >
-          OpenClaiming is an open protocol for publishing and verifying cryptographically signed claims.
-        </motion.p>
-
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-4 text-base text-gray-500 max-w-2xl mx-auto leading-relaxed"
-        >
-          An OpenClaim is a small signed JSON document that states something about a subject.
-          Anyone can verify it using the issuer's public key.
+          OpenClaiming is an open protocol for publishing and verifying cryptographically signed claims. An OpenClaim is a small signed JSON document that states something about a subject. Anyone can verify it using the issuer's public key.
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <a
