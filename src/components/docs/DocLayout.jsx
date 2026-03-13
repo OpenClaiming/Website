@@ -19,7 +19,7 @@ export default function DocLayout({ title, children }) {
       <div className="bg-gray-50 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
-            <Link to="/Home" className="hover:text-gray-600 transition-colors">Home</Link>
+            <Link to="/Home" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="hover:text-gray-600 transition-colors">Home</Link>
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-gray-600">Documentation</span>
           </div>
@@ -37,6 +37,7 @@ export default function DocLayout({ title, children }) {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)}
                   className={`block px-3 py-2 text-sm rounded-lg transition-colors ${
                     location.pathname === item.path
                       ? "text-emerald-600 bg-emerald-50 font-medium"
@@ -55,6 +56,7 @@ export default function DocLayout({ title, children }) {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)}
                 className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
                   location.pathname === item.path
                     ? "text-emerald-600 bg-emerald-50 border-emerald-200"
