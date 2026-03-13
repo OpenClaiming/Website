@@ -27,14 +27,14 @@ export default function HeroSection() {
           </span>
         </motion.h1>
 
-        <motion.p
+        <motion.h2
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed"
+          className="mt-12 text-2xl sm:text-3xl font-bold text-gray-100 max-w-3xl mx-auto leading-tight text-center"
         >
-          OpenClaiming is an open protocol for publishing and verifying cryptographically signed claims. An OpenClaim is a small signed JSON document that states something about a subject. Anyone can verify it using the issuer's public key.
-        </motion.p>
+          A signed claim that anyone can verify.
+        </motion.h2>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -57,11 +57,7 @@ export default function HeroSection() {
           </p>
 
           <p className="text-base text-gray-400 leading-relaxed">
-            OpenClaiming focuses on a simpler primitive:
-          </p>
-
-          <p className="text-base text-gray-300 font-semibold">
-            A signed claim that anyone can verify.
+            OpenClaiming focuses on a simpler primitive: <strong className="text-gray-300">a signed claim that anyone can verify.</strong>
           </p>
 
           <p className="text-base text-gray-400 leading-relaxed">
