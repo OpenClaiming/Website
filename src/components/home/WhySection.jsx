@@ -16,7 +16,7 @@ export default function WhySection() {
         <SectionReveal>
           <div className="max-w-3xl">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-              Why OpenClaiming
+              The Need for OpenClaiming Protocol
             </h2>
             <div className="mt-6 text-base text-gray-600 leading-relaxed space-y-4">
               <p>
