@@ -27,50 +27,14 @@ export default function HeroSection() {
           </span>
         </motion.h1>
 
-        <motion.h2
+        <motion.p
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-12 text-2xl sm:text-3xl font-bold text-gray-100 max-w-3xl mx-auto leading-tight text-center"
+          className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed"
         >
-          A signed claim that anyone can verify.
-        </motion.h2>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-8 max-w-3xl mx-auto space-y-4 text-left"
-        >
-          <p className="text-base text-gray-400 leading-relaxed">
-            Today many systems need verifiable statements — about identities, roles, permissions,
-            events, and observations. However, most existing standards require complex infrastructure,
-            large schemas, specialized tooling, or centralized registries before anything useful
-            can be published or verified.
-          </p>
-
-          <p className="text-base text-gray-400 leading-relaxed">
-            As a result, many developers fall back to ad-hoc solutions such as unsigned JSON,
-            custom API responses, proprietary tokens, or opaque database records. These approaches
-            make interoperability difficult and prevent third parties from independently verifying
-            the truth of a statement.
-          </p>
-
-          <p className="text-base text-gray-400 leading-relaxed">
-            OpenClaiming focuses on a simpler primitive: <strong className="text-gray-300">a signed claim that anyone can verify.</strong>
-          </p>
-
-          <p className="text-base text-gray-400 leading-relaxed">
-            Instead of introducing new identity frameworks or credential registries, OpenClaiming
-            defines a minimal signed JSON document that can be published anywhere and verified
-            using standard public-key cryptography. This allows systems to exchange verifiable
-            statements without requiring shared infrastructure or prior trust relationships.
-          </p>
-
-          <p className="text-base text-gray-400 leading-relaxed">
-            This simple primitive can support many common needs:
-          </p>
-        </motion.div>
+          OpenClaiming is an open protocol for publishing and verifying cryptographically signed claims. An OpenClaim is a small signed JSON document that states something about a subject. Anyone can verify it using the issuer's public key.
+        </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -126,22 +90,6 @@ export default function HeroSection() {
               </a>
             ))}
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-8 max-w-3xl mx-auto text-left"
-        >
-          <p className="text-base text-gray-400 leading-relaxed">
-            OpenClaiming intentionally avoids unnecessary complexity. It can coexist with
-            larger credential systems or serve as a lightweight building block inside them.
-            For a comparison with existing standards and approaches, see{' '}
-            <a href="#comparison" className="text-emerald-400 hover:text-emerald-300 underline transition-colors">
-              the comparison section
-            </a>.
-          </p>
         </motion.div>
       </div>
 
