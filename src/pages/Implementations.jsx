@@ -102,181 +102,254 @@ export class OpenClaim {
   python: {
     label: "Python",
     code: `# Optional strict canonicalizer:
+# pip install rfc8785
 # https://github.com/trailofbits/rfc8785.py
 
 import json
 import base64
-import hashlib
 
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import hashes
 
+try:
+	import rfc8785
+	STRICT = True
+except ImportError:
+	STRICT = False
+
 
 class OpenClaim:
 
-  @staticmethod
-  def normalize(v):
+	@staticmethod
+	def normalize(v):
 
-    if isinstance(v, dict):
-      return {k: OpenClaim.normalize(v[k]) for k in sorted(v)}
+		if isinstance(v, dict):
+			return {k: OpenClaim.normalize(v[k]) for k in sorted(v)}
 
-    if isinstance(v, list):
-      return [OpenClaim.normalize(x) for x in v]
+		if isinstance(v, list):
+			return [OpenClaim.normalize(x) for x in v]
 
-    if isinstance(v, float):
-      return format(v,".15g")
-
-    return v
+		return v
 
 
-  @staticmethod
-  def canonicalize(claim):
+	@staticmethod
+	def fallback_canonicalize(obj):
 
-    obj = dict(claim)
+		n = OpenClaim.normalize(obj)
 
-    if "sig" in obj:
-      del obj["sig"]
-
-    n = OpenClaim.normalize(obj)
-
-    return json.dumps(n,separators=(",",":"))
+		return json.dumps(
+			n,
+			separators=(",",":")
+		).encode()
 
 
-  @staticmethod
-  def sign(claim,private_key):
+	@staticmethod
+	def canonicalize(claim):
 
-    canon = OpenClaim.canonicalize(claim).encode()
+		obj = dict(claim)
 
-    hash = hashlib.sha256(canon).digest()
+		obj.pop("sig", None)
 
-    sig = private_key.sign(hash,ec.ECDSA(hashes.SHA256()))
+		if STRICT:
+			try:
+				return rfc8785.canonicalize(obj)
+			except Exception:
+				pass
 
-    claim["sig"] = base64.b64encode(sig).decode()
-
-    return claim
+		return OpenClaim.fallback_canonicalize(obj)
 
 
-  @staticmethod
-  def verify(claim,public_key):
+	@staticmethod
+	def sign(claim, private_key):
 
-    if "sig" not in claim:
-      return False
+		canon = OpenClaim.canonicalize(claim)
 
-    sig = base64.b64decode(claim["sig"])
+		sig = private_key.sign(
+			canon,
+			ec.ECDSA(hashes.SHA256())
+		)
 
-    canon = OpenClaim.canonicalize(claim).encode()
+		out = dict(claim)
 
-    hash = hashlib.sha256(canon).digest()
+		out["sig"] = base64.b64encode(sig).decode()
 
-    try:
-      public_key.verify(sig,hash,ec.ECDSA(hashes.SHA256()))
-      return True
-    except:
-      return False`,
+		return out
+
+
+	@staticmethod
+	def verify(claim, public_key):
+
+		sig_b64 = claim.get("sig")
+
+		if not sig_b64:
+			return False
+
+		sig = base64.b64decode(sig_b64)
+
+		canon = OpenClaim.canonicalize(claim)
+
+		try:
+			public_key.verify(
+				sig,
+				canon,
+				ec.ECDSA(hashes.SHA256())
+			)
+			return True
+		except Exception:
+			return False`,
   },
   go: {
     label: "Go",
-    code: `// Optional strict canonicalizer:
-// github.com/gowebpki/jcs
-
-package openclaiming
+    code: `package openclaiming
 
 import (
-  "crypto/ecdsa"
-  "crypto/rand"
-  "crypto/sha256"
-  "encoding/base64"
-  "encoding/json"
-  "math/big"
-  "sort"
-  "strconv"
+	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/asn1"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"math/big"
+	"sort"
+
+	jcs "github.com/gowebpki/jcs"
 )
 
-type OpenClaim struct{}
+type ecdsaSignature struct {
+	R, S *big.Int
+}
 
 func normalize(v interface{}) interface{} {
 
-  switch t := v.(type) {
+	switch t := v.(type) {
 
-  case float64:
-    return strconv.FormatFloat(t,'g',-1,64)
+	case map[string]interface{}:
 
-  case map[string]interface{}:
+		keys := make([]string, 0, len(t))
+		for k := range t {
+			keys = append(keys, k)
+		}
 
-    keys := make([]string,0,len(t))
-    for k := range t { keys = append(keys,k) }
+		sort.Strings(keys)
 
-    sort.Strings(keys)
+		out := map[string]interface{}{}
 
-    out := map[string]interface{}{}
+		for _, k := range keys {
+			out[k] = normalize(t[k])
+		}
 
-    for _,k := range keys {
-      out[k] = normalize(t[k])
-    }
+		return out
 
-    return out
+	case []interface{}:
 
-  case []interface{}:
+		arr := make([]interface{}, len(t))
 
-    arr := make([]interface{},len(t))
+		for i, v := range t {
+			arr[i] = normalize(v)
+		}
 
-    for i,v := range t {
-      arr[i] = normalize(v)
-    }
+		return arr
+	}
 
-    return arr
-  }
-
-  return v
+	return v
 }
 
-func (OpenClaim) Canonicalize(claim map[string]interface{}) ([]byte,error) {
+func fallbackCanonicalize(claim map[string]interface{}) ([]byte, error) {
 
-  obj := map[string]interface{}{}
+	obj := map[string]interface{}{}
 
-  for k,v := range claim {
-    if k != "sig" {
-      obj[k] = v
-    }
-  }
+	for k, v := range claim {
+		if k != "sig" {
+			obj[k] = v
+		}
+	}
 
-  return json.Marshal(normalize(obj))
+	return json.Marshal(normalize(obj))
 }
 
-func (o OpenClaim) Sign(claim map[string]interface{},priv *ecdsa.PrivateKey) (map[string]interface{},error) {
+func Canonicalize(claim map[string]interface{}) ([]byte, error) {
 
-  canon,_ := o.Canonicalize(claim)
+	obj := map[string]interface{}{}
 
-  hash := sha256.Sum256(canon)
+	for k, v := range claim {
+		if k != "sig" {
+			obj[k] = v
+		}
+	}
 
-  r,s,err := ecdsa.Sign(rand.Reader,priv,hash[:])
-  if err != nil { return nil,err }
+	raw, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
 
-  sig := append(r.Bytes(),s.Bytes()...)
+	// Try strict RFC8785 canonicalization
+	canon, err := jcs.Transform(raw)
+	if err == nil {
+		return canon, nil
+	}
 
-  claim["sig"] = base64.StdEncoding.EncodeToString(sig)
-
-  return claim,nil
+	// Fallback deterministic canonicalization
+	return fallbackCanonicalize(claim)
 }
 
-func (o OpenClaim) Verify(claim map[string]interface{},pub *ecdsa.PublicKey) bool {
+func Sign(claim map[string]interface{}, priv *ecdsa.PrivateKey) (map[string]interface{}, error) {
 
-  sigB64,ok := claim["sig"].(string)
-  if !ok { return false }
+	canon, err := Canonicalize(claim)
+	if err != nil {
+		return nil, err
+	}
 
-  sig,err := base64.StdEncoding.DecodeString(sigB64)
-  if err != nil { return false }
+	hash := sha256.Sum256(canon)
 
-  canon,_ := o.Canonicalize(claim)
+	r, s, err := ecdsa.Sign(rand.Reader, priv, hash[:])
+	if err != nil {
+		return nil, err
+	}
 
-  hash := sha256.Sum256(canon)
+	sig, err := asn1.Marshal(ecdsaSignature{r, s})
+	if err != nil {
+		return nil, err
+	}
 
-  mid := len(sig)/2
+	out := map[string]interface{}{}
+	for k, v := range claim {
+		out[k] = v
+	}
 
-  r := new(big.Int).SetBytes(sig[:mid])
-  s := new(big.Int).SetBytes(sig[mid:])
+	out["sig"] = base64.StdEncoding.EncodeToString(sig)
 
-  return ecdsa.Verify(pub,hash[:],r,s)
+	return out, nil
+}
+
+func Verify(claim map[string]interface{}, pub *ecdsa.PublicKey) (bool, error) {
+
+	sigB64, ok := claim["sig"].(string)
+	if !ok {
+		return false, errors.New("missing signature")
+	}
+
+	sig, err := base64.StdEncoding.DecodeString(sigB64)
+	if err != nil {
+		return false, err
+	}
+
+	var esig ecdsaSignature
+	_, err = asn1.Unmarshal(sig, &esig)
+	if err != nil {
+		return false, err
+	}
+
+	canon, err := Canonicalize(claim)
+	if err != nil {
+		return false, err
+	}
+
+	hash := sha256.Sum256(canon)
+
+	ok = ecdsa.Verify(pub, hash[:], esig.R, esig.S)
+
+	return ok, nil
 }`,
   },
   rust: {
