@@ -281,116 +281,106 @@ func (o OpenClaim) Verify(claim map[string]interface{},pub *ecdsa.PublicKey) boo
   },
   rust: {
     label: "Rust",
-    code: `// Optional strict canonicalizer:
-// https://github.com/cyberphone/json-canonicalization
-
-use serde_json::{Value,Map};
-use sha2::{Sha256,Digest};
+    code: `use serde_json::{Value,Map};
 use p256::ecdsa::{SigningKey,VerifyingKey,Signature};
 use p256::ecdsa::signature::{Signer,Verifier};
-use base64::{encode,decode};
-use ryu::Buffer;
+use base64::{engine::general_purpose,Engine as _};
 
 pub struct OpenClaim;
 
 impl OpenClaim {
 
-  fn normalize(v: Value) -> Value {
+	fn normalize(v: Value) -> Value {
+		match v {
 
-    match v {
+			Value::Array(a) =>
+				Value::Array(a.into_iter().map(Self::normalize).collect()),
 
-      Value::Number(n) => {
+			Value::Object(m) => {
+				let mut keys: Vec<_> = m.keys().cloned().collect();
+				keys.sort();
 
-        if let Some(f) = n.as_f64() {
+				let mut out = Map::new();
 
-          let mut buf = Buffer::new();
-          let s = buf.format(f).to_string();
+				for k in keys {
+					out.insert(k.clone(),Self::normalize(m[&k].clone()));
+				}
 
-          Value::String(s)
-        }
-        else {
-          Value::Number(n)
-        }
-      }
+				Value::Object(out)
+			}
 
-      Value::Array(arr) => {
-        Value::Array(arr.into_iter().map(Self::normalize).collect())
-      }
+			_ => v
+		}
+	}
 
-      Value::Object(map) => {
+	fn fallback(mut claim: Value) -> String {
 
-        let mut keys: Vec<_> = map.keys().cloned().collect();
-        keys.sort();
+		if let Some(o) = claim.as_object_mut() {
+			o.remove("sig");
+		}
 
-        let mut new = Map::new();
+		let sorted = Self::normalize(claim);
 
-        for k in keys {
-          new.insert(k.clone(),Self::normalize(map[&k].clone()));
-        }
+		serde_json::to_string(&sorted).unwrap()
+	}
 
-        Value::Object(new)
-      }
+	pub fn canonicalize(claim: Value) -> String {
 
-      _ => v
-    }
-  }
+		let mut obj = claim.clone();
 
-  pub fn canonicalize(mut claim: Value) -> String {
+		if let Some(o) = obj.as_object_mut() {
+			o.remove("sig");
+		}
 
-    if let Some(obj) = claim.as_object_mut() {
-      obj.remove("sig");
-    }
+		if let Ok(s) = jcs::to_string(&obj) {
+			return s
+		}
 
-    let sorted = Self::normalize(claim);
+		Self::fallback(claim)
+	}
 
-    serde_json::to_string(&sorted).unwrap()
-  }
+	pub fn sign(claim: Value,key:&SigningKey) -> Value {
 
-  pub fn sign(claim: Value,key:&SigningKey) -> Value {
+		let canon = Self::canonicalize(claim.clone());
 
-    let canon = Self::canonicalize(claim.clone());
+		let sig: Signature = key.sign(canon.as_bytes());
 
-    let hash = Sha256::digest(canon.as_bytes());
+		let mut obj = claim;
 
-    let sig: Signature = key.sign(&hash);
+		obj["sig"] = Value::String(
+			general_purpose::STANDARD.encode(sig.to_bytes())
+		);
 
-    let mut obj = claim;
+		obj
+	}
 
-    obj["sig"] = Value::String(encode(sig.to_bytes()));
+	pub fn verify(claim: Value,key:&VerifyingKey) -> bool {
 
-    obj
-  }
+		let sig = match claim.get("sig") {
+			Some(Value::String(s)) =>
+				match general_purpose::STANDARD.decode(s) {
+					Ok(v)=>v,
+					Err(_)=>return false
+				},
+			_ => return false
+		};
 
-  pub fn verify(claim: Value,key:&VerifyingKey) -> bool {
+		let sig = match Signature::from_bytes(&sig) {
+			Ok(v)=>v,
+			Err(_)=>return false
+		};
 
-    let sig_b64 = match claim.get("sig") {
-      Some(Value::String(s)) => s,
-      _ => return false
-    };
+		let canon = Self::canonicalize(claim);
 
-    let sig_bytes = match decode(sig_b64) {
-      Ok(v)=>v,
-      Err(_)=>return false
-    };
-
-    let sig = match Signature::from_bytes(&sig_bytes) {
-      Ok(v)=>v,
-      Err(_)=>return false
-    };
-
-    let canon = Self::canonicalize(claim);
-
-    let hash = Sha256::digest(canon.as_bytes());
-
-    key.verify(&hash,&sig).is_ok()
-  }
+		key.verify(canon.as_bytes(),&sig).is_ok()
+	}
 }`,
   },
   php: {
     label: "PHP",
     code: `<?php
 // Optional strict canonicalizer:
-// https://github.com/cyberphone/json-canonicalization
+// composer require sop/json-canonicalization
 
 class OpenClaim {
 
@@ -398,22 +388,31 @@ class OpenClaim {
 
     if (is_array($v)) {
 
+      // associative array
       if (array_keys($v) !== range(0, count($v)-1)) {
         ksort($v);
       }
 
-      foreach ($v as $k=>$val) {
+      foreach ($v as $k => $val) {
         $v[$k] = self::normalize($val);
       }
 
       return $v;
     }
 
-    if (is_float($v)) {
-      return rtrim(rtrim(sprintf('%.15g',$v),'0'),'.');
-    }
-
     return $v;
+  }
+
+  private static function fallbackCanonicalize($claim) {
+
+    unset($claim["sig"]);
+
+    $sorted = self::normalize($claim);
+
+    return json_encode(
+      $sorted,
+      JSON_UNESCAPED_SLASHES
+    );
   }
 
   public static function canonicalize($claim) {
@@ -421,25 +420,36 @@ class OpenClaim {
     $obj = $claim;
     unset($obj["sig"]);
 
-    $obj = self::normalize($obj);
+    // Try RFC8785 canonicalization if library installed
+    if (class_exists("\\Sop\\JsonCanonicalization\\Canonicalizer")) {
 
-    return json_encode($obj, JSON_UNESCAPED_SLASHES);
+      try {
+        $canon = new \\Sop\\JsonCanonicalization\\Canonicalizer();
+        return $canon->canonicalize($obj);
+      } catch (\\Exception $e) {}
+    }
+
+    return self::fallbackCanonicalize($claim);
   }
 
-  public static function sign($claim,$privateKeyPem) {
+  public static function sign($claim, $privateKeyPem) {
 
     $canon = self::canonicalize($claim);
 
-    $hash = hash("sha256",$canon,true);
+    openssl_sign(
+      $canon,
+      $signature,
+      $privateKeyPem,
+      OPENSSL_ALGO_SHA256
+    );
 
-    openssl_sign($hash,$signature,$privateKeyPem,OPENSSL_ALGO_SHA256);
+    $out = $claim;
+    $out["sig"] = base64_encode($signature);
 
-    $claim["sig"] = base64_encode($signature);
-
-    return $claim;
+    return $out;
   }
 
-  public static function verify($claim,$publicKeyPem) {
+  public static function verify($claim, $publicKeyPem) {
 
     if (!isset($claim["sig"])) return false;
 
@@ -447,10 +457,8 @@ class OpenClaim {
 
     $canon = self::canonicalize($claim);
 
-    $hash = hash("sha256",$canon,true);
-
     return openssl_verify(
-      $hash,
+      $canon,
       $sig,
       $publicKeyPem,
       OPENSSL_ALGO_SHA256
@@ -460,194 +468,182 @@ class OpenClaim {
   },
   java: {
     label: "Java",
-    code: `// Optional strict canonicalizer:
-// https://github.com/erdtman/java-json-canonicalization
+    code: `package openclaiming;
 
-import java.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.webpki.json.JSONCanonicalizer;
+
 import java.security.*;
+import java.util.*;
 import java.util.Base64;
 
 public class OpenClaim {
 
-	static Object normalize(Object v) {
+	private static final ObjectMapper mapper = new ObjectMapper();
 
-		if (v instanceof Map) {
+	static {
+		mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+	}
 
-			Map<String,Object> map = new TreeMap<>();
+	private static Object normalize(Object v) {
 
-			((Map<String,Object>)v).forEach(
-				(k,val) -> map.put(k, normalize(val))
-			);
+		if (v instanceof Map<?,?> map) {
 
-			return map;
+			Map<String,Object> sorted = new TreeMap<>();
+
+			for (var e : map.entrySet()) {
+				sorted.put(
+					e.getKey().toString(),
+					normalize(e.getValue())
+				);
+			}
+
+			return sorted;
 		}
 
-		if (v instanceof List) {
+		if (v instanceof List<?> list) {
 
 			List<Object> out = new ArrayList<>();
 
-			for (Object o : (List)v)
-				out.add(normalize(o));
+			for (Object x : list) {
+				out.add(normalize(x));
+			}
 
 			return out;
-		}
-
-		if (v instanceof Double) {
-			return Double.toString((Double)v);
 		}
 
 		return v;
 	}
 
-	public static String canonicalize(Map<String,Object> claim) throws Exception {
+
+	private static String fallbackCanonicalize(Map<String,Object> claim)
+		throws Exception {
 
 		Map<String,Object> obj = new HashMap<>(claim);
 
 		obj.remove("sig");
 
-		Object sorted = normalize(obj);
+		Object normalized = normalize(obj);
 
-		return new com.fasterxml.jackson.databind.ObjectMapper()
-			.writeValueAsString(sorted);
+		return mapper.writeValueAsString(normalized);
 	}
 
-	public static Map<String,Object> sign(Map<String,Object> claim, PrivateKey key) throws Exception {
+
+	public static String canonicalize(Map<String,Object> claim)
+		throws Exception {
+
+		Map<String,Object> obj = new HashMap<>(claim);
+
+		obj.remove("sig");
+
+		try {
+
+			String json = mapper.writeValueAsString(obj);
+
+			return new String(
+				new JSONCanonicalizer(json).getEncodedUTF8()
+			);
+
+		} catch (Exception e) {
+
+			return fallbackCanonicalize(claim);
+		}
+	}
+
+
+	public static Map<String,Object> sign(
+		Map<String,Object> claim,
+		PrivateKey privateKey
+	) throws Exception {
 
 		String canon = canonicalize(claim);
 
-		MessageDigest sha = MessageDigest.getInstance("SHA-256");
+		Signature signer = Signature.getInstance("SHA256withECDSA");
 
-		byte[] hash = sha.digest(canon.getBytes());
+		signer.initSign(privateKey);
 
-		Signature sig = Signature.getInstance("SHA256withECDSA");
+		signer.update(canon.getBytes());
 
-		sig.initSign(key);
+		byte[] sig = signer.sign();
 
-		sig.update(hash);
+		Map<String,Object> out = new HashMap<>(claim);
 
-		byte[] s = sig.sign();
+		out.put(
+			"sig",
+			Base64.getEncoder().encodeToString(sig)
+		);
 
-		claim.put("sig", Base64.getEncoder().encodeToString(s));
-
-		return claim;
+		return out;
 	}
 
-	public static boolean verify(Map<String,Object> claim, PublicKey key) throws Exception {
 
-		if (!claim.containsKey("sig")) return false;
+	public static boolean verify(
+		Map<String,Object> claim,
+		PublicKey publicKey
+	) throws Exception {
 
-		String sig64 = (String)claim.get("sig");
+		Object sigObj = claim.get("sig");
 
-		byte[] signature = Base64.getDecoder().decode(sig64);
+		if (!(sigObj instanceof String sigB64))
+			return false;
+
+		byte[] sig;
+
+		try {
+			sig = Base64.getDecoder().decode(sigB64);
+		} catch (Exception e) {
+			return false;
+		}
 
 		String canon = canonicalize(claim);
 
-		byte[] hash = MessageDigest
-			.getInstance("SHA-256")
-			.digest(canon.getBytes());
+		Signature verifier = Signature.getInstance("SHA256withECDSA");
 
-		Signature sig = Signature.getInstance("SHA256withECDSA");
+		verifier.initVerify(publicKey);
 
-		sig.initVerify(key);
+		verifier.update(canon.getBytes());
 
-		sig.update(hash);
-
-		return sig.verify(signature);
+		return verifier.verify(sig);
 	}
 }`,
   },
   swift: {
     label: "Swift",
-    code: `// Optional strict canonicalizer:
-// https://github.com/erdtman/swift-json-canonicalization
+    code: `// swift-tools-version:5.9
 
-import Foundation
-import CryptoKit
+import PackageDescription
 
-class OpenClaim {
-
-  static func normalize(_ value: Any) -> Any {
-
-    if let dict = value as? [String: Any] {
-
-      let sortedKeys = dict.keys.sorted()
-      var result: [String: Any] = [:]
-
-      for key in sortedKeys {
-        result[key] = normalize(dict[key]!)
-      }
-
-      return result
-    }
-
-    if let array = value as? [Any] {
-      return array.map { normalize($0) }
-    }
-
-    if let num = value as? Double {
-
-      var s = String(format: "%.15g", num)
-
-      while s.last == "0" {
-        s.removeLast()
-      }
-
-      if s.last == "." {
-        s.removeLast()
-      }
-
-      return s
-    }
-
-    return value
-  }
-
-  static func canonicalize(_ claim: [String: Any]) throws -> Data {
-
-    var obj = claim
-    obj.removeValue(forKey: "sig")
-
-    let normalized = normalize(obj)
-
-    let data = try JSONSerialization.data(
-      withJSONObject: normalized,
-      options: []
-    )
-
-    return data
-  }
-
-  static func sign(_ claim: [String: Any], privateKey: P256.Signing.PrivateKey) throws -> [String: Any] {
-
-    let canon = try canonicalize(claim)
-
-    let hash = SHA256.hash(data: canon)
-
-    let signature = try privateKey.signature(for: hash)
-
-    var newClaim = claim
-    newClaim["sig"] = Data(signature.derRepresentation).base64EncodedString()
-
-    return newClaim
-  }
-
-  static func verify(_ claim: [String: Any], publicKey: P256.Signing.PublicKey) throws -> Bool {
-
-    guard let sigB64 = claim["sig"] as? String,
-          let sigData = Data(base64Encoded: sigB64)
-    else {
-      return false
-    }
-
-    let canon = try canonicalize(claim)
-
-    let hash = SHA256.hash(data: canon)
-
-    let signature = try P256.Signing.ECDSASignature(derRepresentation: sigData)
-
-    return publicKey.isValidSignature(signature, for: hash)
-  }
-}`,
+let package = Package(
+	name: "OpenClaiming",
+	platforms: [
+		.iOS(.v13),
+		.macOS(.v12)
+	],
+	products: [
+		.library(
+			name: "OpenClaiming",
+			targets: ["OpenClaiming"]
+		)
+	],
+	dependencies: [
+		.package(
+			url: "https://github.com/cyberphone/json-canonicalization",
+			from: "1.0.0"
+		)
+	],
+	targets: [
+		.target(
+			name: "OpenClaiming",
+			dependencies: [
+				.product(
+					name: "JSONCanonicalization",
+					package: "json-canonicalization"
+				)
+			]
+		)
+	]
+)`,
   },
 };
 
