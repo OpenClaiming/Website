@@ -12,7 +12,8 @@ const exampleCode = `{
   },
   "nbf": 1712000000,
   "exp": 1750000000,
-  "sig": "BASE64_SIGNATURE"
+  "key": "https://example.com/.well-known/openclaiming.json#key1",
+  "sig": ["BASE64_SIGNATURE"]
 }`;
 
 const states = [
