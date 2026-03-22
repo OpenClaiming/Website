@@ -3,6 +3,9 @@ import { ChevronRight } from "lucide-react";
 
 const docNav = [
   { label: "Protocol Spec", path: "/Docs" },
+  { label: "Extensions", path: "/Extensions" },
+  { label: "Payments", path: "/PaymentsExtension" },
+  { label: "Authorizations", path: "/AuthorizationsExtension" },
   { label: "Security Model", path: "/SecurityModel" },
   { label: "Protocol Examples", path: "/ProtocolExamples" },
   { label: "Design Philosophy", path: "/DesignPhilosophy" },

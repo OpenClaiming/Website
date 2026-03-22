@@ -9,6 +9,9 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Docs from './pages/Docs';
+import Extensions from './pages/Extensions';
+import PaymentsExtension from './pages/PaymentsExtension';
+import AuthorizationsExtension from './pages/AuthorizationsExtension';
 import SecurityModel from './pages/SecurityModel';
 import ProtocolExamples from './pages/ProtocolExamples';
 import DesignPhilosophy from './pages/DesignPhilosophy';
@@ -41,6 +44,9 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Navigate to="/Home" replace />} />
         <Route path="/Home" element={<Home />} />
         <Route path="/Docs" element={<Docs />} />
+        <Route path="/Extensions" element={<Extensions />} />
+        <Route path="/PaymentsExtension" element={<PaymentsExtension />} />
+        <Route path="/AuthorizationsExtension" element={<AuthorizationsExtension />} />
         <Route path="/SecurityModel" element={<SecurityModel />} />
         <Route path="/ProtocolExamples" element={<ProtocolExamples />} />
         <Route path="/DesignPhilosophy" element={<DesignPhilosophy />} />
