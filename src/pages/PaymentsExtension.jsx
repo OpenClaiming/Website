@@ -133,7 +133,7 @@ export default function PaymentsExtension() {
   "sub": "qbix:token:SomeCommunity",
   "stm": {
     "recipients": ["qbix:user:someUserId"],
-    "max": "3000000",
+    "max": "133.50",
     "line": 7
   },
   "key": "https://community.example/.well-known/openclaiming.json#payerKey",
