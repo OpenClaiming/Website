@@ -5,80 +5,226 @@ export default function AuthorizationsExtension() {
   return (
     <DocLayout title="Authorizations Extension">
       <p className="lead text-lg text-gray-500 !mt-0">
-        The authorizations extension defines roles and permissions.
+        The authorizations extension defines standardized permission claims that grant one or more actors the ability to perform specific actions on a specific subject, optionally under constraints and within defined contexts.
       </p>
 
       <hr />
 
       <h1>Overview</h1>
       <p>
-        These claims allow systems to assign capabilities such as:
+        Unlike the freeform <code>stm</code> field, this extension exists to normalize common authorization patterns so they can be interpreted consistently across systems.
       </p>
+
+      <p>Authorizations can be used for:</p>
       <ul>
-        <li>Access rights</li>
-        <li>Roles (e.g. student, admin)</li>
-        <li>Permitted actions</li>
+        <li>role assignment</li>
+        <li>permission grants</li>
+        <li>delegated control</li>
+        <li>workflow approvals</li>
+        <li>gated access to contracts, communities, APIs, or application resources</li>
       </ul>
-      <p>Authorization claims can be enforced across both on-chain and off-chain systems.</p>
+
+      <p>These claims are designed to work both:</p>
+      <ul>
+        <li>off-chain (application logic, Qbix systems)</li>
+        <li>on-chain (EVM smart contracts via EIP-712 verification)</li>
+      </ul>
 
       <hr />
 
       <h1>Structure</h1>
+      <CodeBlock code={`"authorizations": [ claims ]`} language="json" />
+      <p>Each entry in the array is a full OpenClaim.</p>
+
+      <hr />
+
+      <h1>Claim Shape</h1>
       <CodeBlock
-        code={`"authorizations": [ /* array of authorization claims */ ]`}
+        code={`{
+  "ocp": 1,
+  "iss": "authority identifier",
+  "sub": "authorized subject",
+  "stm": {
+    "actors": ["actor identifier", "..."],
+    "roles": ["role name", "..."],
+    "actions": ["action name", "..."],
+    "constraints": [
+      {
+        "key": "constraintName",
+        "op": "eq",
+        "value": "..."
+      }
+    ],
+    "contexts": [
+      {
+        "type": "contextType",
+        "value": "..."
+      }
+    ]
+  },
+  "key": ...,
+  "sig": ["BASE64_SIGNATURE", ...]
+}`}
         language="json"
       />
 
       <hr />
 
       <h1>Field Semantics</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Field</th>
-            <th>Meaning</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>iss</code></td>
-            <td>authority granting the authorization</td>
-          </tr>
-          <tr>
-            <td><code>sub</code></td>
-            <td>entity receiving the authorization</td>
-          </tr>
-          <tr>
-            <td><code>stm.roles</code></td>
-            <td>array of role identifiers</td>
-          </tr>
-          <tr>
-            <td><code>stm.actions</code></td>
-            <td>array of permitted action identifiers</td>
-          </tr>
-        </tbody>
-      </table>
+
+      <h2>iss (Authority)</h2>
+      <p>The issuer of the claim. This is the authority granting permission.</p>
+      <p>Examples:</p>
+      <CodeBlock
+        code={`"iss": "evm:53:address:0x...authority"
+"iss": "qbix:community:SomeCommunity"`}
+        language="json"
+      />
+
+      <h2>sub (Subject)</h2>
+      <p>
+        The resource or object being authorized.
+        This is <strong>not a token</strong> (unless the authorization is about a token).
+        It represents what is being controlled.
+      </p>
+      <p>Examples:</p>
+      <CodeBlock
+        code={`"sub": "evm:53:address:0x...communityContract"
+"sub": "evm:53:address:0x...controlContract"
+"sub": "qbix:community:SomeCommunity"
+"sub": "qbix:stream:publisherId/streamName"`}
+        language="json"
+      />
+
+      <h2>actors</h2>
+      <p>Identifies who is allowed to act under this authorization.</p>
+      <p>Examples:</p>
+      <CodeBlock
+        code={`"actors": ["evm:53:address:0x...user"]
+"actors": ["qbix:user:someUserId"]`}
+        language="json"
+      />
+
+      <h2>roles</h2>
+      <p>Defines roles associated with the authorization.</p>
+      <p>These may represent:</p>
+      <ul>
+        <li>roles being granted</li>
+        <li>roles required</li>
+        <li>roles referenced by downstream systems</li>
+      </ul>
+      <p>Examples:</p>
+      <CodeBlock code={`"roles": ["admins", "moderators"]`} language="json" />
+
+      <h2>actions</h2>
+      <p>Defines what operations are allowed.</p>
+      <p>Examples:</p>
+      <CodeBlock code={`"actions": ["grantRoles", "revokeRoles", "invoke", "execute"]`} language="json" />
+      <p>These map naturally to contract operations and application actions.</p>
+
+      <h2>constraints</h2>
+      <p>Optional restrictions that limit the authorization.</p>
+      <CodeBlock
+        code={`"constraints": [
+  { "key": "maxAddresses", "op": "eq", "value": "100" },
+  { "key": "duration", "op": "eq", "value": "2592000" }
+]`}
+        language="json"
+      />
+      <p>Examples include:</p>
+      <ul>
+        <li>maximum limits</li>
+        <li>time durations</li>
+        <li>thresholds</li>
+        <li>object-specific restrictions</li>
+      </ul>
+
+      <h2>contexts</h2>
+      <p>Optional scoping of where or how the authorization applies.</p>
+      <CodeBlock
+        code={`"contexts": [
+  { "type": "contract", "value": "Community" },
+  { "type": "app", "value": "Groups" }
+]`}
+        language="json"
+      />
+      <p>Used for:</p>
+      <ul>
+        <li>application scoping</li>
+        <li>workflow scoping</li>
+        <li>multi-environment systems</li>
+      </ul>
 
       <hr />
 
-      <h1>Example</h1>
+      <h1>Examples</h1>
+
+      <h2>Example 1 — Community Role Management (EVM)</h2>
       <CodeBlock
         code={`{
   "ocp": 1,
-  "iss": "https://university.example",
-  "sub": "https://users.example/alice",
+  "iss": "evm:53:address:0x...authority",
+  "sub": "evm:53:address:0x...communityContract",
   "stm": {
-    "roles": ["students"],
-    "actions": []
+    "actors": ["evm:53:address:0x...operator"],
+    "roles": ["admins", "members"],
+    "actions": ["grantRoles", "revokeRoles"],
+    "constraints": [
+      { "key": "maxAddresses", "op": "eq", "value": "100" },
+      { "key": "duration", "op": "eq", "value": "2592000" }
+    ],
+    "contexts": [
+      { "type": "contract", "value": "Community" }
+    ]
   },
-  "nbf": 1712000000,
-  "exp": 1750000000,
-  "key": {
-    "typ": "ES256",
-    "crv": "P-256",
-    "x": "BASE64_X",
-    "y": "BASE64_Y"
+  "key": ...,
+  "sig": ["BASE64_SIGNATURE"]
+}`}
+        language="json"
+      />
+      <p>This authorizes an operator to manage roles within a community contract, subject to limits.</p>
+
+      <h2>Example 2 — Control Workflow Authorization</h2>
+      <CodeBlock
+        code={`{
+  "ocp": 1,
+  "iss": "evm:53:address:0x...authority",
+  "sub": "evm:53:address:0x...controlContract",
+  "stm": {
+    "actors": ["evm:53:address:0x...delegate"],
+    "actions": ["invoke", "endorse", "execute"],
+    "constraints": [
+      { "key": "minimumDelay", "op": "eq", "value": "3600" }
+    ],
+    "contexts": [
+      { "type": "group", "value": "currentGroup" }
+    ]
   },
+  "key": ...,
+  "sig": ["BASE64_SIGNATURE"]
+}`}
+        language="json"
+      />
+      <p>This authorizes participation in a multi-step execution workflow.</p>
+
+      <h2>Example 3 — Qbix Resource Authorization</h2>
+      <CodeBlock
+        code={`{
+  "ocp": 1,
+  "iss": "qbix:community:SomeCommunity",
+  "sub": "qbix:stream:SomePublisherId/SomeStream",
+  "stm": {
+    "actors": ["qbix:user:someUserId"],
+    "roles": ["moderators"],
+    "actions": ["read", "write", "relate"],
+    "constraints": [
+      { "key": "maxRelations", "op": "eq", "value": "50" }
+    ],
+    "contexts": [
+      { "type": "app", "value": "Groups" }
+    ]
+  },
+  "key": ...,
   "sig": ["BASE64_SIGNATURE"]
 }`}
         language="json"
@@ -86,18 +232,123 @@ export default function AuthorizationsExtension() {
 
       <hr />
 
-      <h1>Role-Based Access Control</h1>
+      <h1>Canonical Defaults</h1>
+      <p>For deterministic processing, omitted fields are treated as:</p>
+      <CodeBlock
+        code={`actors: []
+roles: []
+actions: []
+constraints: []
+contexts: []
+nbf: 0
+exp: 0`}
+        language="json"
+      />
+      <p>This ensures consistent hashing and EIP-712 compatibility.</p>
+
+      <hr />
+
+      <h1>Canonical EIP-712 Mapping</h1>
+      <p>Authorizations are designed to map deterministically into EIP-712.</p>
+
+      <h2>Domain (inferred)</h2>
+      <ul>
+        <li>name = <code>"OpenClaiming.authorizations"</code></li>
+        <li>version = <code>"1"</code></li>
+        <li>chainId = extracted from <code>iss</code></li>
+      </ul>
+
+      <h2>Canonical Struct</h2>
+      <CodeBlock
+        code={`Authorization(
+  string iss,
+  string sub,
+  bytes32 actorsHash,
+  bytes32 rolesHash,
+  bytes32 actionsHash,
+  bytes32 constraintsHash,
+  bytes32 contextsHash,
+  uint256 nbf,
+  uint256 exp
+)`}
+        language="solidity"
+      />
+
+      <h2>Nested Types</h2>
+      <CodeBlock
+        code={`Constraint(string key,string op,string value)
+Context(string type,string value)`}
+        language="solidity"
+      />
+
+      <h2>Hashing Rules</h2>
+      <ul>
+        <li>arrays must be ordered</li>
+        <li>strings hashed via keccak256(bytes(...))</li>
+        <li>nested objects canonicalized before hashing</li>
+        <li>empty arrays must hash deterministically</li>
+      </ul>
+
+      <hr />
+
+      <h1>Contract Interoperability</h1>
+      <p>This extension is designed to map cleanly to existing contract systems:</p>
+      <ul>
+        <li>role-based systems (community contracts)</li>
+        <li>multi-step control systems (invoke / endorse / execute)</li>
+        <li>permission gating logic</li>
+      </ul>
       <p>
-        Authorization claims can be used to implement role-based access control (RBAC) across decentralized systems.
-        The issuer defines roles and actions, and verifiers enforce them.
+        These patterns are already reflected in deployed contract architectures and should be supported by verifier contracts and libraries.
       </p>
 
       <hr />
 
-      <h1>Time-Bound Authorizations</h1>
-      <p>
-        Use <code>nbf</code> and <code>exp</code> fields to create temporary authorizations that automatically expire.
-      </p>
+      <h1>Execution Model</h1>
+      <p>An authorization claim may be:</p>
+      <ul>
+        <li>verified off-chain and enforced in application logic</li>
+        <li>submitted to a smart contract for validation</li>
+        <li>used as input to governance or workflow systems</li>
+      </ul>
+
+      <p>Verification checks include:</p>
+      <ul>
+        <li>signature validity</li>
+        <li>issuer authority</li>
+        <li>expiration constraints</li>
+        <li>action and constraint matching</li>
+      </ul>
+
+      <hr />
+
+      <h1>Design Notes</h1>
+      <ul>
+        <li><code>stm</code> remains freeform in general OpenClaiming</li>
+        <li>this extension standardizes authorization semantics</li>
+        <li>canonical structure enables deterministic EIP-712 encoding</li>
+        <li>optional fields allow flexible expressiveness</li>
+        <li>defaults ensure stable hashing</li>
+      </ul>
+
+      <hr />
+
+      <h1>Summary</h1>
+      <p>The authorizations extension transforms OpenClaiming from:</p>
+      <ul>
+        <li>simple signed statements</li>
+      </ul>
+      <p>into:</p>
+      <ul>
+        <li>a portable, composable permission system</li>
+      </ul>
+      <p>that works across:</p>
+      <ul>
+        <li>blockchains</li>
+        <li>applications</li>
+        <li>decentralized systems</li>
+        <li>community platforms</li>
+      </ul>
     </DocLayout>
   );
 }
