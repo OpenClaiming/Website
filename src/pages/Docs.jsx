@@ -31,8 +31,8 @@ export default function Docs() {
   "nbf": 0,
   "exp": 0,
   "nce": "optional nonce",
-  "key": "public key reference",
-  "sig": "signature"
+  "key": "public key reference or array",
+  "sig": ["BASE64_SIGNATURE", ...]
 }`}
         language="json"
       />
@@ -57,8 +57,8 @@ export default function Docs() {
             ["nbf", "optional", "not-before timestamp"],
             ["exp", "optional", "expiration timestamp"],
             ["nce", "optional", "nonce value"],
-            ["key", "optional", "reference to public key"],
-            ["sig", "yes", "cryptographic signature"],
+            ["key", "optional", "key(s) corresponding to signatures (object, string, or array)"],
+            ["sig", "yes", "array of Base64-encoded signatures"],
           ].map(([field, req, desc]) => (
             <tr key={field}>
               <td><code>{field}</code></td>
@@ -116,15 +116,80 @@ export default function Docs() {
 
       <hr />
 
-      <h1>Key Field</h1>
-      <CodeBlock code={`"key": "https://example.com/.well-known/openclaiming.json#key1"`} language="json" />
-      <p>The <code>key</code> field indicates where the verifier can obtain the public key. This may be a URL, a DID reference, a blockchain key, or an inline key. If omitted, the verifier must determine the public key via other means.</p>
+      <h1>Extensions</h1>
+      <p>
+        Extensions are top-level fields that define standardized claim formats for common use cases.
+        They exist alongside core fields such as <code>nbf</code> and <code>exp</code>, and are not part of <code>stm</code>.
+      </p>
+      <p>
+        While <code>stm</code> remains freeform, extensions ensure interoperability by defining consistent schemas.
+      </p>
+
+      <h2>Standard Extensions (v1)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>payments</code></td>
+            <td>optional</td>
+            <td>array of payment claims</td>
+          </tr>
+          <tr>
+            <td><code>authorizations</code></td>
+            <td>optional</td>
+            <td>array of authorization claims</td>
+          </tr>
+        </tbody>
+      </table>
 
       <hr />
 
       <h1>Signature</h1>
-      <CodeBlock code={`"sig": "BASE64_SIGNATURE"`} language="json" />
-      <p>The signature is computed over the canonicalized JSON document. Before signing: remove the <code>sig</code> field, canonicalize JSON, hash the result, and sign the hash.</p>
+      <CodeBlock code={`"sig": ["BASE64_SIGNATURE", ...]`} language="json" />
+      <p>Each signature is computed over the canonicalized JSON document. Before signing: remove the <code>sig</code> field, canonicalize JSON, hash the result, and sign the hash.</p>
+      <p>
+        The <code>sig</code> field is an array. Each signature is independently computed and verified.
+        Multiple signatures allow a claim to support different verification mechanisms (e.g. ES256 and EIP-712).
+        Each signature corresponds to a key in the <code>key</code> field.
+      </p>
+
+      <hr />
+
+      <h1>Key Field</h1>
+      <h2>Definition</h2>
+      <CodeBlock code={`"key": OBJECT | STRING | ARRAY`} language="json" />
+      <p>
+        The <code>key</code> field defines how to obtain the public key(s) used for verification.
+        It may be:
+      </p>
+      <ul>
+        <li>a string (URL reference)</li>
+        <li>an object (inline key)</li>
+        <li>an array of keys (matching the sig array)</li>
+      </ul>
+
+      <h2>Mapping Rule</h2>
+      <p>
+        If <code>key</code> is an array, it MUST correspond 1:1 with the <code>sig</code> array.
+        If <code>key</code> is a single value, it applies to all signatures.
+      </p>
+
+      <h2>Supported Types (v1)</h2>
+      <CodeBlock code={`"typ": "ES256"   // default
+"typ": "EIP712"`} language="json" />
+
+      <h2>URL Reference Example</h2>
+      <CodeBlock code={`"key": "https://example.com/.well-known/openclaiming.json#level1#level2"`} language="json" />
+      <p>
+        The fragment (#...) specifies a path inside the JSON document.
+        Each segment drills down one level into nested objects.
+      </p>
 
       <hr />
 
@@ -141,20 +206,55 @@ export default function Docs() {
         <li>Compute SHA-256 hash.</li>
         <li>Sign the hash with the issuer's private key.</li>
         <li>Encode the signature as Base64.</li>
-        <li>Add the <code>sig</code> field.</li>
+        <li>Add the <code>sig</code> field as an array of signatures.</li>
       </ol>
 
       <hr />
 
       <h1>Verification Process</h1>
       <ol>
-        <li>Extract the signature.</li>
+        <li>Extract the signatures.</li>
         <li>Remove the <code>sig</code> field.</li>
         <li>Canonicalize JSON.</li>
         <li>Compute SHA-256 hash.</li>
         <li>Obtain issuer public key.</li>
         <li>Verify the signature.</li>
+        <li>Each signature MUST be verified independently against its corresponding key.</li>
       </ol>
+
+      <hr />
+
+      <h1>EIP-712 Support (v1)</h1>
+      <p>OpenClaiming supports EIP-712 signatures for efficient on-chain verification.</p>
+
+      <h2>Inference Rules</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>chainId</code></td>
+            <td>extracted from <code>iss</code></td>
+          </tr>
+          <tr>
+            <td><code>name</code></td>
+            <td>derived from extension (OpenClaiming.payments, etc.)</td>
+          </tr>
+          <tr>
+            <td><code>version</code></td>
+            <td>"1"</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        No domain or schema needs to be specified explicitly.
+        All values are inferred deterministically from the claim.
+      </p>
 
       <hr />
 
@@ -225,13 +325,19 @@ export default function Docs() {
     "role": "moderator"
   },
   "nbf": 1712000000,
-  "sig": "BASE64_SIGNATURE"
+  "key": {
+    "typ": "ES256",
+    "crv": "P-256",
+    "x": "BASE64_X",
+    "y": "BASE64_Y"
+  },
+  "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
 
       <hr />
 
-      <h1>Extensions</h1>
-      <p>Future versions may introduce multisignature claims, embedded keys, Merkle proof inclusion, claim revocation mechanisms, and claim bundles.</p>
+      <h1>Future Extensions</h1>
+      <p>Future versions may introduce embedded keys, Merkle proof inclusion, claim revocation mechanisms, and claim bundles.</p>
 
       <hr />
 
