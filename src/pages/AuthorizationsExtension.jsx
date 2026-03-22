@@ -264,8 +264,8 @@ exp: 0`}
       <h2>Canonical Struct</h2>
       <CodeBlock
         code={`Authorization(
-  string iss,
-  string sub,
+  address authority,
+  address subject,
   bytes32 actorsHash,
   bytes32 rolesHash,
   bytes32 actionsHash,
@@ -276,6 +276,7 @@ exp: 0`}
 )`}
         language="solidity"
       />
+      <p><strong>Important:</strong> All arrays are hashed. Contracts verify hashes, not raw arrays.</p>
 
       <h2>Nested Types</h2>
       <CodeBlock
@@ -284,11 +285,30 @@ Context(string type,string value)`}
         language="solidity"
       />
 
+      <h2>Hash-based Integrity</h2>
+      <p>All arrays are stored as hashes in the canonical struct:</p>
+      <CodeBlock
+        code={`actorsHash = keccak256(...)
+rolesHash = keccak256(...)
+actionsHash = keccak256(...)
+constraintsHash = keccak256(...)
+contextsHash = keccak256(...)`}
+        language="solidity"
+      />
+
+      <h2>verifyAuthorizationWithData</h2>
+      <p>Optional function that allows passing full arrays:</p>
+      <ul>
+        <li>accepts full arrays as parameters</li>
+        <li>contract recomputes hash</li>
+        <li>checks integrity against claim hash</li>
+      </ul>
+
       <h2>Hashing Rules</h2>
       <ul>
         <li>arrays must be ordered</li>
         <li>strings hashed via keccak256(bytes(...))</li>
-        <li>nested objects canonicalized before hashing</li>
+        <li>nested objects hashed individually before packing</li>
         <li>empty arrays must hash deterministically</li>
       </ul>
 

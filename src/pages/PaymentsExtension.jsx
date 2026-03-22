@@ -5,13 +5,21 @@ export default function PaymentsExtension() {
   return (
     <DocLayout title="Payments Extension">
       <p className="lead text-lg text-gray-500 !mt-0">
-        The payments extension defines a standardized way to express spending authorizations.
-        A payment claim allows one or more recipients to redeem value from a payer, up to a specified maximum amount.
+        A payment claim is a signed authorization that allows spending from a payer along a specific trustline ("line").
+        The claim does not track usage itself — instead, spending is enforced cumulatively on the line.
       </p>
 
       <hr />
 
       <h1>Overview</h1>
+      <p>Payment claims enable:</p>
+      <ul>
+        <li>trustline-based spending</li>
+        <li>delegated payment authorization</li>
+        <li>cross-system settlement</li>
+        <li>reusable payment capacity</li>
+      </ul>
+
       <p>These claims can be:</p>
       <ul>
         <li>submitted to smart contracts on blockchains</li>
@@ -19,14 +27,6 @@ export default function PaymentsExtension() {
       </ul>
 
       <p>The signed claim itself acts as authorization, removing the need for separate approval transactions.</p>
-
-      <p>This enables:</p>
-      <ul>
-        <li>trustline-based payments</li>
-        <li>delegated spending</li>
-        <li>cross-system settlement</li>
-        <li>unified payment logic across on-chain and off-chain environments</li>
-      </ul>
 
       <hr />
 
@@ -84,19 +84,21 @@ export default function PaymentsExtension() {
       </ul>
 
       <h2>max</h2>
-      <p>Maximum amount authorized for transfer.</p>
+      <p>Maximum total spend allowed on the line.</p>
       <CodeBlock code={`"max": "3000000"`} language="json" />
+      <p><strong>Important:</strong> <code>max</code> represents the maximum total spend allowed on the line, evaluated against the line's current spent amount.</p>
       <ul>
         <li>encoded as string in JSON</li>
-        <li>interpreted as integer in execution layer</li>
+        <li>interpreted as uint256 in execution layer</li>
       </ul>
 
       <h2>line</h2>
-      <p>Trustline identifier used for replay protection.</p>
+      <p>Trustline identifier for cumulative spending tracking.</p>
       <CodeBlock code={`"line": 7`} language="json" />
       <ul>
-        <li>acts as a nonce or sequence number</li>
-        <li>prevents reuse of the same authorization</li>
+        <li>line = uint256</li>
+        <li>line 0 is valid</li>
+        <li>lines persist on-chain</li>
       </ul>
 
       <hr />
@@ -144,6 +146,65 @@ export default function PaymentsExtension() {
 
       <hr />
 
+      <h1>Lines (Trustlines)</h1>
+      <p>Each payment is executed against a line:</p>
+      <CodeBlock code={`payer → line → max → spent`} language="text" />
+
+      <h2>Line State</h2>
+      <p>Lines are persistent state defined per (address, lineId):</p>
+      <ul>
+        <li><code>max</code> — maximum capacity</li>
+        <li><code>spent</code> — current cumulative spending</li>
+        <li><code>open/closed</code> — line status</li>
+      </ul>
+
+      <h2>Remaining Capacity</h2>
+      <CodeBlock code={`remaining = min(claim.max, line.max) - line.spent`} language="javascript" />
+
+      <h2>Line Lifecycle</h2>
+      <h3>Open</h3>
+      <CodeBlock code={`lineOpen(account, line, max)`} language="solidity" />
+
+      <h3>Close</h3>
+      <CodeBlock code={`lineClose(account, line)`} language="solidity" />
+
+      <h2>Access Control</h2>
+      <p>Lines can be managed by:</p>
+      <ul>
+        <li>account itself</li>
+        <li>or account.owner() (for managed accounts)</li>
+      </ul>
+
+      <h2>Unlimited Lines</h2>
+      <p><code>max = 0</code> → unlimited capacity</p>
+
+      <hr />
+
+      <h1>Delegation</h1>
+      <p>Payment claims enable delegated spending:</p>
+      <ul>
+        <li><strong>ERC20</strong> — uses transferFrom (requires approval)</li>
+        <li><strong>native token</strong> — must be sent by payer directly</li>
+      </ul>
+
+      <hr />
+
+      <h1>Replay Protection</h1>
+      <p>Replay protection is enforced through cumulative spending on each line.</p>
+      <p><strong>Claims are reusable</strong> until line capacity is exhausted.</p>
+
+      <hr />
+
+      <h1>Multi-line Execution</h1>
+      <p>Multiple claims can combine for larger payments:</p>
+      <ul>
+        <li>multiple claims can combine</li>
+        <li>same payer + token required</li>
+        <li>behaves like routing liquidity</li>
+      </ul>
+
+      <hr />
+
       <h1>Canonical Defaults</h1>
       <p>For deterministic processing, omitted fields are treated as:</p>
       <CodeBlock
@@ -172,8 +233,8 @@ recipients: []`}
       <h2>Canonical Struct</h2>
       <CodeBlock
         code={`Payment(
-  string iss,
-  string sub,
+  address payer,
+  address token,
   bytes32 recipientsHash,
   uint256 max,
   uint256 line,
@@ -204,9 +265,10 @@ recipients: []`}
 
       <h2>Value Conversion</h2>
       <ul>
-        <li><code>max</code> → parsed as uint256</li>
+        <li><code>iss</code> → parsed as address (payer)</li>
+        <li><code>sub</code> → parsed as address (token)</li>
+        <li><code>max</code> → uint256</li>
         <li><code>line</code> → uint256</li>
-        <li><code>iss</code>, <code>sub</code> → hashed strings</li>
       </ul>
 
       <hr />
@@ -236,19 +298,7 @@ recipients: []`}
         <li>partially consumed (remaining allowance tracked)</li>
       </ul>
 
-      <hr />
 
-      <h1>Replay Protection</h1>
-      <p>The <code>line</code> field acts as a trustline identifier or nonce.</p>
-
-      <p>Typical strategies:</p>
-      <ul>
-        <li>increment line after each use</li>
-        <li>invalidate line after execution</li>
-        <li>track consumed amounts per line</li>
-      </ul>
-
-      <p>This prevents replay attacks and ensures safe reuse patterns.</p>
 
       <hr />
 
