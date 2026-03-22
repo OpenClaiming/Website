@@ -5,107 +5,89 @@ export default function EVMBlockchains() {
   return (
     <DocLayout title="EVM Blockchains">
       <p className="lead text-lg text-gray-500 !mt-0">
-        OpenClaiming supports EVM-compatible verification using EIP-712 typed structured data.
+        OpenClaiming on EVM blockchains uses canonical EIP-712 typed data.
+        All OpenClaiming JSON is processed off-chain. On-chain contracts operate only on typed Solidity structs and signature bytes.
       </p>
 
       <hr />
 
-      <h1>Overview</h1>
-      <p>This allows OpenClaims to be:</p>
+      <h1>Core Design</h1>
+      <p>The EVM integration follows these principles:</p>
       <ul>
-        <li>verified inside smart contracts</li>
-        <li>submitted as authorization payloads</li>
-        <li>used directly in on-chain execution flows</li>
+        <li><strong>No string parsing on-chain</strong></li>
+        <li><strong>No JSON parsing on-chain</strong></li>
+        <li><strong>No schema passed dynamically</strong></li>
       </ul>
 
-      <p>
-        Reference: <a href="https://eips.ethereum.org/EIPS/eip-712" target="_blank" rel="noopener noreferrer">EIP-712</a>
-      </p>
-
-      <hr />
-
-      <h1>Design Principles</h1>
-      <p>OpenClaiming's EVM integration follows strict principles:</p>
-      <ul>
-        <li><strong>no per-claim schema required</strong></li>
-        <li><strong>maximum inference</strong></li>
-        <li><strong>deterministic encoding</strong></li>
-        <li><strong>canonical struct definitions</strong></li>
-        <li><strong>portable across chains and systems</strong></li>
-      </ul>
-
-      <blockquote>
-        Any valid OpenClaim can be deterministically converted into an EIP-712 payload without additional configuration.
-      </blockquote>
-
-      <hr />
-
-      <h1>When EIP-712 Applies</h1>
-      <p>EIP-712 signatures are used when:</p>
+      <p>Instead, the workflow is:</p>
       <CodeBlock
-        code={`{
-  "key": {
-    "typ": "EIP712"
-  }
-}`}
-        language="json"
+        code={`Off-chain:
+- Parse OCP JSON
+- Build canonical struct
+- Compute hashes
+- Sign
+
+On-chain:
+- Receive struct + signature
+- Recompute hash
+- Verify
+- Execute`}
+        language="text"
       />
 
-      <hr />
-
-      <h1>Domain Inference</h1>
-      <p>The EIP-712 domain is <strong>fully inferred</strong>, not provided.</p>
-
-      <h2>Domain Type</h2>
-      <CodeBlock code={`EIP712Domain(string name,string version,uint256 chainId)`} language="solidity" />
-
-      <h2>Domain Values</h2>
+      <h2>On-chain vs Off-chain Responsibilities</h2>
       <table>
         <thead>
           <tr>
-            <th>Field</th>
-            <th>Source</th>
+            <th>Responsibility</th>
+            <th>Location</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>name</td>
-            <td>derived from extension</td>
-          </tr>
-          <tr>
-            <td>version</td>
-            <td><code>"1"</code></td>
-          </tr>
-          <tr>
-            <td>chainId</td>
-            <td>extracted from <code>iss</code></td>
-          </tr>
+          <tr><td>JSON parsing</td><td>off-chain</td></tr>
+          <tr><td>schema construction</td><td>off-chain</td></tr>
+          <tr><td>signing</td><td>off-chain</td></tr>
+          <tr><td>verification</td><td>on-chain</td></tr>
+          <tr><td>execution</td><td>on-chain</td></tr>
         </tbody>
       </table>
 
-      <h2>chainId Extraction</h2>
-      <p>From issuer:</p>
-      <CodeBlock code={`evm:<chainId>:address:<address>`} language="text" />
-      <p>Example:</p>
-      <CodeBlock code={`"iss": "evm:53:address:0x..."`} language="json" />
-      <p>→ chainId = 53</p>
+      <hr />
 
-      <h2>Domain Name</h2>
+      <h1>Relationship to OpenClaiming JSON</h1>
+      <p>The transformation flow is:</p>
+      <CodeBlock code={`OCP JSON → (off-chain transform) → EIP712 struct → on-chain verify`} language="text" />
+      <p><strong>JSON never reaches the blockchain.</strong></p>
+      <p>All schema resolution, identifier parsing, and claim transformation happens off-chain before submission to contracts.</p>
+
+      <hr />
+
+      <h1>Domain Separation</h1>
+      <p>
+        EIP-712 requires a domain separator to prevent cross-contract replay attacks.
+        OpenClaiming uses fixed, deterministic domain parameters.
+      </p>
+
+      <h2>Domain Parameters</h2>
       <table>
         <thead>
           <tr>
-            <th>Extension</th>
-            <th>Domain Name</th>
+            <th>Parameter</th>
+            <th>Value</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>payments</td>
-            <td>OpenClaiming.payments</td>
+            <td><code>name</code></td>
+            <td>"OpenClaiming.payments" or "OpenClaiming.authorizations"</td>
           </tr>
           <tr>
-            <td>authorizations</td>
-            <td>OpenClaiming.authorizations</td>
+            <td><code>version</code></td>
+            <td>"1"</td>
+          </tr>
+          <tr>
+            <td><code>chainId</code></td>
+            <td>block.chainid (current chain)</td>
           </tr>
         </tbody>
       </table>
@@ -113,14 +95,13 @@ export default function EVMBlockchains() {
       <hr />
 
       <h1>Canonical Structs</h1>
-      <p>Each extension has a <strong>fixed canonical struct</strong>.</p>
-      <p>No schema needs to be supplied in the claim.</p>
+      <p>Each extension has a fixed canonical struct definition.</p>
 
-      <h2>Payments Struct</h2>
+      <h2>Payment Struct</h2>
       <CodeBlock
         code={`Payment(
-  string iss,
-  string sub,
+  address payer,
+  address token,
   bytes32 recipientsHash,
   uint256 max,
   uint256 line,
@@ -130,11 +111,11 @@ export default function EVMBlockchains() {
         language="solidity"
       />
 
-      <h2>Authorizations Struct</h2>
+      <h2>Authorization Struct</h2>
       <CodeBlock
         code={`Authorization(
-  string iss,
-  string sub,
+  address authority,
+  address subject,
   bytes32 actorsHash,
   bytes32 rolesHash,
   bytes32 actionsHash,
@@ -155,144 +136,81 @@ Context(string type,string value)`}
 
       <hr />
 
-      <h1>Canonical Defaults</h1>
-      <p>To ensure deterministic encoding:</p>
-      <CodeBlock
-        code={`actors = []
-roles = []
-actions = []
-constraints = []
-contexts = []
-nbf = 0
-exp = 0
-recipients = []`}
-        language="text"
-      />
-      <p>Missing fields MUST be treated as defaults.</p>
-
-      <hr />
-
       <h1>Hashing Rules</h1>
-
-      <h2>Strings</h2>
-      <CodeBlock code={`keccak256(bytes(value))`} language="solidity" />
+      <p>
+        OpenClaiming uses deterministic hashing for all array and struct fields.
+      </p>
 
       <h2>Arrays</h2>
-      <ul>
-        <li>order MUST be preserved</li>
-        <li>each element hashed individually</li>
-        <li>combined via abi.encodePacked</li>
-      </ul>
+      <p>Arrays are hashed by packing individual element hashes:</p>
+      <CodeBlock code={`keccak256(abi.encodePacked(values))`} language="solidity" />
 
-      <h2>Example — recipientsHash</h2>
+      <h2>Nested Structs</h2>
+      <p>Each struct is hashed individually, then packed and hashed again:</p>
       <CodeBlock
-        code={`keccak256(
-  abi.encodePacked(
-    keccak256(bytes(recipient1)),
-    keccak256(bytes(recipient2))
-  )
-)`}
+        code={`// hash each → pack → hash
+bytes32 hash1 = hashStruct(item1);
+bytes32 hash2 = hashStruct(item2);
+bytes32 finalHash = keccak256(abi.encodePacked(hash1, hash2));`}
         language="solidity"
       />
+      <p><strong>Important:</strong> Array order MUST be preserved. Empty arrays hash deterministically.</p>
 
-      <h2>Nested Objects</h2>
-      <p>Constraints and contexts must be:</p>
+      <hr />
+
+      <h1>Signature Model</h1>
+      <p>OpenClaiming on EVM uses standard ECDSA signatures:</p>
       <ul>
-        <li>canonicalized</li>
-        <li>encoded deterministically</li>
-        <li>hashed consistently</li>
+        <li><strong>Only EOAs sign</strong> — externally owned accounts with private keys</li>
+        <li><strong>Uses ecrecover</strong> — standard Ethereum signature recovery</li>
+        <li><strong>No ERC-1271 support</strong> — contract signatures not supported (yet)</li>
       </ul>
 
       <hr />
 
-      <h1>Final Digest</h1>
-      <CodeBlock code={`keccak256("\\x19\\x01" || domainSeparator || structHash)`} language="solidity" />
+      <h1>Execution Model</h1>
+      <p>Contracts serve as verification and enforcement layers:</p>
+      <ul>
+        <li><strong>Contracts don't sign</strong> — only EOAs create signatures</li>
+        <li><strong>Contracts only verify + enforce</strong> — check signatures and apply business logic</li>
+        <li><strong>Execution is optional</strong> — verify-only mode is valid</li>
+      </ul>
 
       <hr />
 
       <h1>Verification Flow</h1>
+      <p>The standard verification flow:</p>
       <ol>
-        <li>Parse claim</li>
-        <li>Extract chainId from <code>iss</code></li>
-        <li>Determine extension type</li>
-        <li>Apply canonical defaults</li>
-        <li>Build struct</li>
-        <li>Compute structHash</li>
-        <li>Compute domainSeparator</li>
-        <li>Recover signer</li>
+        <li>receive struct + signature</li>
+        <li>recompute EIP-712 hash</li>
+        <li>recover signer via ecrecover</li>
+        <li>validate signer authority</li>
+        <li>check expiration and constraints</li>
+        <li>execute or revert</li>
       </ol>
 
       <hr />
 
-      <h1>Verifier Contracts and Libraries</h1>
-      <p>Implementations may use:</p>
+      <h1>Determinism</h1>
+      <p>The EVM integration is fully deterministic:</p>
       <ul>
-        <li>predeployed verifier contracts</li>
-        <li>Solidity libraries</li>
-        <li>embedded verification logic</li>
-      </ul>
-
-      <p>These components:</p>
-      <ul>
-        <li>reconstruct canonical structs</li>
-        <li>compute EIP-712 hashes</li>
-        <li>verify signatures</li>
-      </ul>
-
-      <p>This allows OpenClaims to be used directly in smart contracts.</p>
-
-      <hr />
-
-      <h1>Custom Extensions</h1>
-      <p>Developers may define additional extensions.</p>
-
-      <h2>Rule</h2>
-      <p>Custom extensions MUST define:</p>
-      <ul>
-        <li>canonical struct name</li>
-        <li>canonical field ordering</li>
-        <li>deterministic hashing rules</li>
-      </ul>
-
-      <h2>Recommended Approach</h2>
-      <p>Define schema at key URL:</p>
-      <CodeBlock
-        code={`{
-  "typ": "EIP712",
-  "url": "https://example.com/schema.json#MyStruct"
-}`}
-        language="json"
-      />
-
-      <h2>Schema Example</h2>
-      <CodeBlock
-        code={`{
-  "types": {
-    "MyStruct": [
-      { "name": "field1", "type": "string" },
-      { "name": "field2", "type": "uint256" }
-    ]
-  }
-}`}
-        language="json"
-      />
-
-      <h2>Important</h2>
-      <ul>
-        <li>canonical OpenClaiming extensions (payments, authorizations) do NOT require schemas</li>
-        <li>custom extensions MAY provide them</li>
+        <li><strong>No runtime schema</strong> — struct definitions are fixed at compile time</li>
+        <li><strong>No dynamic type construction</strong> — all types are statically defined</li>
+        <li><strong>Fully canonical</strong> — identical inputs always produce identical hashes</li>
       </ul>
 
       <hr />
 
-      <h1>Compatibility</h1>
-      <p>This model supports:</p>
-      <ul>
-        <li>standard EVM wallets</li>
-        <li>EIP-712 signing flows</li>
-        <li>contract-based verification</li>
-        <li>off-chain + on-chain interoperability</li>
-      </ul>
+      <h1>Example Flow</h1>
+      <p>Complete workflow from JSON to execution:</p>
+      <ol>
+        <li><strong>Build JSON</strong> — construct OpenClaim with payment or authorization data</li>
+        <li><strong>Convert to struct</strong> — transform JSON fields into Solidity struct</li>
+        <li><strong>Hash</strong> — compute EIP-712 digest</li>
+        <li><strong>Sign</strong> — EOA signs the digest with private key</li>
+        <li><strong>Submit</strong> — send struct + signature to contract</li>
+        <li><strong>Execute</strong> — contract verifies and executes logic</li>
+      </ol>
 
       <hr />
 
@@ -311,17 +229,10 @@ recipients = []`}
       <h1>Summary</h1>
       <p>OpenClaiming's EVM integration provides:</p>
       <ul>
-        <li>zero-configuration EIP-712 support</li>
-        <li>canonical struct definitions</li>
-        <li>deterministic encoding</li>
-        <li>compatibility with smart contracts and wallets</li>
-      </ul>
-
-      <p>It enables OpenClaims to function as:</p>
-      <ul>
-        <li>portable authorization primitives</li>
-        <li>cross-system verification objects</li>
-        <li>on-chain executable permissions</li>
+        <li>clean separation between off-chain JSON and on-chain structs</li>
+        <li>canonical EIP-712 encoding</li>
+        <li>deterministic verification</li>
+        <li>efficient on-chain execution</li>
       </ul>
     </DocLayout>
   );
