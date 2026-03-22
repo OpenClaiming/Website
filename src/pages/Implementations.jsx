@@ -718,9 +718,99 @@ let package = Package(
 	]
 )`,
   },
+  solidity: {
+    label: "Solidity",
+    code: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "./interfaces/IOpenClaiming.sol";
+
+contract OpenClaimingConsumer {
+
+	address public constant OPENCLAIMING_ADDRESS = 0x0000000000000000000000000000000000000000;
+
+	IOpenClaiming public constant oc = IOpenClaiming(OPENCLAIMING_ADDRESS);
+
+	error PaymentFailed();
+	error InvalidPrice();
+	error VerificationFailed();
+
+	event Purchased(
+		address indexed payer,
+		address indexed token,
+		address indexed recipient,
+		uint256 amount
+	);
+
+	uint256 public constant PRICE = 1e18;
+
+	function purchase(
+		IOpenClaiming.Payment calldata payment,
+		address[] calldata recipients,
+		bytes calldata signature
+	) external payable {
+
+		if (PRICE == 0) revert InvalidPrice();
+
+		bool ok = oc.verifyPayment(payment, signature);
+		if (!ok) revert VerificationFailed();
+
+		bool success = oc.executePayment{value: msg.value}(
+			payment,
+			recipients,
+			signature,
+			payment.line,
+			address(this),
+			PRICE
+		);
+
+		if (!success) revert PaymentFailed();
+
+		_handlePurchase(payment.payer);
+
+		emit Purchased(payment.payer, payment.token, address(this), PRICE);
+	}
+
+	function withdraw(address token, address to, uint256 amount) external {
+
+		if (token == address(0)) {
+			(bool ok,) = to.call{value: amount}("");
+			require(ok, "ETH transfer failed");
+		} else {
+			(bool ok, bytes memory data) = token.call(
+				abi.encodeWithSignature("transfer(address,uint256)", to, amount)
+			);
+			require(ok && (data.length == 0 || abi.decode(data, (bool))), "ERC20 transfer failed");
+		}
+	}
+
+	function _handlePurchase(address buyer) internal {
+		// implement application logic here
+	}
+
+	function canAfford(
+		address payer,
+		uint256 line,
+		uint256 amount
+	) external view returns (bool) {
+		uint256 available = oc.lineAvailable(payer, line);
+		return available >= amount;
+	}
+
+	function computeRecipientsHash(address[] calldata recipients)
+		external
+		pure
+		returns (bytes32)
+	{
+		return keccak256(abi.encodePacked(recipients));
+	}
+
+	receive() external payable {}
+}`,
+  },
 };
 
-const langOrder = ["javascript", "python", "go", "rust", "php", "java", "swift"];
+const langOrder = ["javascript", "python", "go", "rust", "php", "java", "swift", "solidity"];
 
 export default function Implementations() {
   const [selected, setSelected] = useState("javascript");
@@ -844,6 +934,18 @@ export default function Implementations() {
             style={{ cursor: 'pointer' }}
           >
             Swift
+          </button>
+          <button
+            id="solidity"
+            onClick={() => setSelected("solidity")}
+            className={`px-5 py-2.5 text-sm font-mono rounded-lg border transition-all ${
+              selected === "solidity"
+                ? "bg-emerald-500 text-white border-emerald-600 shadow-md"
+                : "bg-white text-gray-700 border-gray-300 hover:border-emerald-400 hover:bg-gray-50"
+            }`}
+            style={{ cursor: 'pointer' }}
+          >
+            Solidity
           </button>
         </div>
 
