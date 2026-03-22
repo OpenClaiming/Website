@@ -249,7 +249,10 @@ exp: 0`}
       <hr />
 
       <h1>Canonical EIP-712 Mapping</h1>
-      <p>Authorizations are designed to map deterministically into EIP-712.</p>
+      <p>
+        Authorizations are designed to map deterministically into EIP-712.
+        For complete EVM-compatible encoding and EIP-712 details, see <a href="/EVMBlockchains">EVM Blockchains</a>.
+      </p>
 
       <h2>Domain (inferred)</h2>
       <ul>

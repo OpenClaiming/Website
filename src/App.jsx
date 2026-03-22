@@ -17,6 +17,7 @@ import ProtocolExamples from './pages/ProtocolExamples';
 import DesignPhilosophy from './pages/DesignPhilosophy';
 import Implementations from './pages/Implementations';
 import Comparison from './pages/Comparison';
+import EVMBlockchains from './pages/EVMBlockchains';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         <Route path="/DesignPhilosophy" element={<DesignPhilosophy />} />
         <Route path="/Implementations" element={<Implementations />} />
         <Route path="/Comparison" element={<Comparison />} />
+        <Route path="/EVMBlockchains" element={<EVMBlockchains />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
