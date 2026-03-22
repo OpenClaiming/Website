@@ -70,6 +70,7 @@ export default function HeroSection() {
               { key: "php", label: "PHP" },
               { key: "java", label: "Java" },
               { key: "swift", label: "Swift" },
+              { key: "solidity", label: "Solidity" },
             ].map(({ key, label }) => (
               <a
                 key={key}

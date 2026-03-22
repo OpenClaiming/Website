@@ -8,6 +8,7 @@ const languages = [
   { key: "php", label: "PHP" },
   { key: "java", label: "Java" },
   { key: "swift", label: "Swift" },
+  { key: "solidity", label: "Solidity" },
 ];
 
 export default function ImplementationsSection() {
