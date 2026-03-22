@@ -194,7 +194,27 @@ export default function Docs() {
       <hr />
 
       <h1>Canonicalization</h1>
-      <p>OpenClaiming uses <strong>JSON Canonicalization Scheme (RFC 8785)</strong>. Canonicalization ensures deterministic serialization by sorting keys, normalizing numbers, and removing whitespace differences. This allows claims signed in one language to be verified in another.</p>
+      
+      <h2>JSON as the Universal Format</h2>
+      <p>OpenClaiming uses JSON for its universal support and human readability. To ensure consistent signatures across implementations, we use <strong>RFC 8785 JSON Canonicalization</strong>—guaranteeing identical byte representations regardless of language or library.</p>
+      
+      <p>Downstream, the claim can be canonicalized, hashed and signed using various standards.</p>
+
+      <h2>ES256 (ECDSA using P-256 and SHA-256)</h2>
+      <p>The default signature type for OpenClaiming is <strong>ES256</strong>, which uses:</p>
+      <ul>
+        <li>ECDSA (Elliptic Curve Digital Signature Algorithm)</li>
+        <li>P-256 curve (also known as secp256r1 or prime256v1)</li>
+        <li>SHA-256 hashing</li>
+      </ul>
+      <p>This combination provides strong cryptographic security with wide compatibility across platforms and languages. ES256 is the standard for JSON Web Signatures (JWS) and is supported natively in most cryptographic libraries.</p>
+
+      <h2>EIP-712 (Ethereum Typed Structured Data)</h2>
+      <p>OpenClaiming also supports <strong>EIP-712</strong> signatures for blockchain compatibility. EIP-712 defines a standard for hashing and signing typed structured data, making it ideal for on-chain verification and smart contract integration.</p>
+      <p>
+        When using EIP-712, the claim is encoded according to the Ethereum typed data specification, allowing it to be verified efficiently in EVM-compatible smart contracts.
+        For complete details, see the <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md" target="_blank" rel="noopener noreferrer">EIP-712 specification</a> and the <a href="/EVMBlockchains">EVM Blockchains</a> documentation page.
+      </p>
 
       <hr />
 
