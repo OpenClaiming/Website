@@ -8,14 +8,23 @@ const LOGO_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/pub
 const navLinks = [
   { label: "Home", path: "/Home" },
   {
-    label: "Documentation",
+    label: "Protocol",
     children: [
       { label: "Protocol Spec", path: "/Docs" },
       { label: "Security Model", path: "/SecurityModel" },
       { label: "Protocol Examples", path: "/ProtocolExamples" },
       { label: "Design Philosophy", path: "/DesignPhilosophy" },
       { label: "Implementations", path: "/Implementations" },
+      { label: "Solidity", path: "/SolidityImplementation" },
       { label: "Comparison", path: "/Comparison" },
+    ],
+  },
+  {
+    label: "Extensions",
+    children: [
+      { label: "Overview", path: "/Extensions" },
+      { label: "Payments", path: "/PaymentsExtension" },
+      { label: "Authorizations", path: "/AuthorizationsExtension" },
     ],
   },
 ];
@@ -24,6 +33,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
+  const [extensionsOpen, setExtensionsOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -35,6 +45,7 @@ export default function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
     setDocsOpen(false);
+    setExtensionsOpen(false);
   }, [location]);
 
   return (
@@ -58,15 +69,28 @@ export default function Navbar() {
               link.children ? (
                 <div key={link.label} className="relative">
                   <button
-                    onClick={() => setDocsOpen(!docsOpen)}
-                    onBlur={() => setTimeout(() => setDocsOpen(false), 200)}
+                    onClick={() => {
+                      if (link.label === "Protocol") {
+                        setDocsOpen(!docsOpen);
+                        setExtensionsOpen(false);
+                      } else if (link.label === "Extensions") {
+                        setExtensionsOpen(!extensionsOpen);
+                        setDocsOpen(false);
+                      }
+                    }}
+                    onBlur={() => setTimeout(() => {
+                      if (link.label === "Protocol") setDocsOpen(false);
+                      if (link.label === "Extensions") setExtensionsOpen(false);
+                    }, 200)}
                     className="flex items-center gap-1 px-3 py-2 text-sm text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/5"
                   >
                     {link.label}
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${docsOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${
+                      (link.label === "Protocol" && docsOpen) || (link.label === "Extensions" && extensionsOpen) ? "rotate-180" : ""
+                    }`} />
                   </button>
                   <AnimatePresence>
-                    {docsOpen && (
+                    {((link.label === "Protocol" && docsOpen) || (link.label === "Extensions" && extensionsOpen)) && (
                       <motion.div
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
