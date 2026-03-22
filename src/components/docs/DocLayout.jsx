@@ -2,16 +2,15 @@ import { Link, useLocation } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 
 const docNav = [
-  { label: "Protocol Spec", path: "/Docs" },
-  { label: "Extensions", path: "/Extensions" },
-  { label: "Payments", path: "/PaymentsExtension" },
-  { label: "Authorizations", path: "/AuthorizationsExtension" },
-  { label: "Security Model", path: "/SecurityModel" },
-  { label: "Protocol Examples", path: "/ProtocolExamples" },
-  { label: "Design Philosophy", path: "/DesignPhilosophy" },
-  { label: "Implementations", path: "/Implementations" },
-  { label: "Solidity", path: "/SolidityImplementation" },
-  { label: "vs Other Standards", path: "/Comparison" },
+  { label: "Design Philosophy", path: "/DesignPhilosophy", section: "Protocol" },
+  { label: "vs Other Standards", path: "/Comparison", section: "Protocol" },
+  { label: "Protocol Spec", path: "/Docs", section: "Protocol" },
+  { label: "Security Model", path: "/SecurityModel", section: "Protocol" },
+  { label: "Protocol Examples", path: "/ProtocolExamples", section: "Protocol" },
+  { label: "Implementations", path: "/Implementations", section: "Protocol" },
+  { label: "Overview", path: "/Extensions", section: "Extensions" },
+  { label: "Payments", path: "/PaymentsExtension", section: "Extensions" },
+  { label: "Authorizations", path: "/AuthorizationsExtension", section: "Extensions" },
 ];
 
 export default function DocLayout({ title, children }) {
@@ -36,8 +35,23 @@ export default function DocLayout({ title, children }) {
           {/* Sidebar */}
           <nav className="hidden lg:block">
             <div className="sticky top-24 space-y-1">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Documentation</p>
-              {docNav.map((item) => (
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Protocol</p>
+              {docNav.filter(item => item.section === "Protocol").map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)}
+                  className={`block px-3 py-2 text-sm rounded-lg transition-colors ${
+                    location.pathname === item.path
+                      ? "text-emerald-600 bg-emerald-50 font-medium"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-3 px-3">Extensions</p>
+              {docNav.filter(item => item.section === "Extensions").map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}

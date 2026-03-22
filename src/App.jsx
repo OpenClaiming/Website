@@ -16,7 +16,6 @@ import SecurityModel from './pages/SecurityModel';
 import ProtocolExamples from './pages/ProtocolExamples';
 import DesignPhilosophy from './pages/DesignPhilosophy';
 import Implementations from './pages/Implementations';
-import SolidityImplementation from './pages/SolidityImplementation';
 import Comparison from './pages/Comparison';
 
 const AuthenticatedApp = () => {
@@ -52,7 +51,6 @@ const AuthenticatedApp = () => {
         <Route path="/ProtocolExamples" element={<ProtocolExamples />} />
         <Route path="/DesignPhilosophy" element={<DesignPhilosophy />} />
         <Route path="/Implementations" element={<Implementations />} />
-        <Route path="/SolidityImplementation" element={<SolidityImplementation />} />
         <Route path="/Comparison" element={<Comparison />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

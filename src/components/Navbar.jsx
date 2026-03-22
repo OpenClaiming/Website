@@ -10,13 +10,12 @@ const navLinks = [
   {
     label: "Protocol",
     children: [
+      { label: "Design Philosophy", path: "/DesignPhilosophy" },
+      { label: "vs Other Standards", path: "/Comparison" },
       { label: "Protocol Spec", path: "/Docs" },
       { label: "Security Model", path: "/SecurityModel" },
       { label: "Protocol Examples", path: "/ProtocolExamples" },
-      { label: "Design Philosophy", path: "/DesignPhilosophy" },
       { label: "Implementations", path: "/Implementations" },
-      { label: "Solidity", path: "/SolidityImplementation" },
-      { label: "Comparison", path: "/Comparison" },
     ],
   },
   {
