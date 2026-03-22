@@ -10,6 +10,7 @@ const docNav = [
   { label: "Protocol Examples", path: "/ProtocolExamples" },
   { label: "Design Philosophy", path: "/DesignPhilosophy" },
   { label: "Implementations", path: "/Implementations" },
+  { label: "Solidity", path: "/SolidityImplementation" },
   { label: "vs Other Standards", path: "/Comparison" },
 ];
 
