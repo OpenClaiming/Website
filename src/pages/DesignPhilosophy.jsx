@@ -89,7 +89,7 @@ export default function DesignPhilosophy() {
       <hr />
 
       <h1>Future Evolution</h1>
-      <p>Future versions may add optional features—multisignatures, embedded keys, Merkle proofs, revocation. But the core principle stays the same:</p>
+      <p>Future versions may add optional features—embedded Merkle proofs, additional signature algorithms, ZK proof integrations. But the core principle stays the same:</p>
       <CodeBlock code={`issuer signs statement about subject`} language="text" />
 
       <hr />

@@ -12,7 +12,7 @@ const exampleCode = `{
   },
   "nbf": 1712000000,
   "exp": 1750000000,
-  "key": "https://example.com/.well-known/openclaiming.json#key1",
+  "key": ["https://example.com/.well-known/openclaiming.json#key1"],
   "sig": ["BASE64_SIGNATURE"]
 }`;
 

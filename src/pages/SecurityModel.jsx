@@ -35,6 +35,7 @@ export default function SecurityModel() {
       <h1>Identity Model</h1>
       <p>Identifiers used in <code>iss</code>, <code>sub</code>, and <code>stm</code> fields are opaque strings interpreted by applications. The recommended format is:</p>
       <CodeBlock code={`<ecosystem>:<chain>:<type>:<value>`} language="text" />
+      <p><code>iss</code> and <code>sub</code> must be non-empty strings. URI format (<code>https://</code>, <code>did:</code>, <code>evm:</code>, etc.) is recommended for globally unambiguous identifiers. In closed systems, simpler strings are acceptable. Extensions may impose stricter identifier requirements.</p>
       <p>Identifiers are NOT keys. Keys use data URLs or HTTPS URLs for key material.</p>
 
       <hr />
@@ -62,13 +63,7 @@ export default function SecurityModel() {
       <hr />
 
       <h1>Replay Attacks</h1>
-      <p>Claims may be replayed if no time constraints exist. To mitigate replay attacks, implementations should use:</p>
-      <ul>
-        <li><code>nbf</code> (not-before timestamps)</li>
-        <li><code>exp</code> (expiration timestamps)</li>
-        <li><code>nce</code> (nonces)</li>
-      </ul>
-      <p>Applications may enforce stricter replay protections depending on context.</p>
+      <p>Replay protection is an application concern, not a protocol requirement. Systems that need nonce or sequence guarantees should include them in the <code>stm</code> payload, which is covered by the signature. The optional <code>nbf</code> and <code>exp</code> fields provide time-bounded validity when needed.</p>
 
       <hr />
 
@@ -81,7 +76,7 @@ export default function SecurityModel() {
       <h1>Revocable vs Non-Revocable Claims</h1>
 
       <h2>Revocable Claims</h2>
-      <p>Claims using remote key references (e.g. HTTPS URLs) are revocable. If the remote key material changes, previously valid signatures may become invalid.</p>
+      <p>Claims using remote key references (e.g. HTTPS URLs) are revocable. If the remote key material changes, previously valid signatures may become invalid. This means the key reference format itself encodes revocability intent: choose a URL key when you want revocability, choose a <code>data:key/...</code> inline key when you want permanent non-repudiation.</p>
 
       <h2>Non-Revocable Claims</h2>
       <p>Claims using embedded keys (e.g. <code>data:key/...</code>) are non-revocable. They remain verifiable indefinitely, assuming cryptographic assumptions hold.</p>
