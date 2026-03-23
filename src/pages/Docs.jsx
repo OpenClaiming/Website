@@ -151,45 +151,60 @@ export default function Docs() {
       <hr />
 
       <h1>Signature</h1>
-      <CodeBlock code={`"sig": ["BASE64_SIGNATURE", ...]`} language="json" />
+      <CodeBlock code={`"sig": ["SIGNATURE", ...]`} language="json" />
       <p>Each signature is computed over the canonicalized JSON document. Before signing: remove the <code>sig</code> field, canonicalize JSON, hash the result, and sign the hash.</p>
-      <p>
-        The <code>sig</code> field is an array. Each signature is independently computed and verified.
-        Multiple signatures allow a claim to support different verification mechanisms (e.g. ES256 and EIP-712).
-        Each signature corresponds to a key in the <code>key</code> field.
-      </p>
+      <p>Each signature corresponds to the key at the same index. The encoding and verification method of each signature is determined by the corresponding key.</p>
+
+      <h2>Signature Encodings (v1)</h2>
+      <table>
+        <thead>
+          <tr><th>Format</th><th>Encoding</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>ES256</td><td>Base64 DER</td></tr>
+          <tr><td>EIP712</td><td>Hex (0x-prefixed)</td></tr>
+        </tbody>
+      </table>
 
       <hr />
 
       <h1>Key Field</h1>
       <h2>Definition</h2>
-      <CodeBlock code={`"key": OBJECT | STRING | ARRAY`} language="json" />
+      <CodeBlock code={`"key": STRING | ARRAY<STRING>`} language="json" />
       <p>
         The <code>key</code> field defines how to obtain the public key(s) used for verification.
-        It may be:
+        Each key MUST be a string. Supported forms include:
       </p>
       <ul>
-        <li>a string (URL reference)</li>
-        <li>an object (inline key)</li>
-        <li>an array of keys (matching the sig array)</li>
+        <li>Data URLs (embedded keys)</li>
+        <li>HTTPS URLs (remote key discovery)</li>
+        <li>Identifier-based formats (e.g. EIP-712 signers)</li>
+      </ul>
+      <CodeBlock code={`"key": [
+  "data:key/es256;base64,MIIB...",
+  "https://example.com/.well-known/openclaim.json#keys"
+]`} language="json" />
+
+      <h2>Key Rules</h2>
+      <ul>
+        <li>Keys MUST be strings</li>
+        <li>Keys MUST be sorted lexicographically</li>
+        <li>Keys MUST be unique</li>
+        <li>If <code>key</code> is an array, it MUST correspond 1:1 with <code>sig</code></li>
+        <li>If <code>key</code> is a string, it applies to all signatures</li>
       </ul>
 
-      <h2>Mapping Rule</h2>
-      <p>
-        If <code>key</code> is an array, it MUST correspond 1:1 with the <code>sig</code> array.
-        If <code>key</code> is a single value, it applies to all signatures.
-      </p>
-
-      <h2>Supported Types (v1)</h2>
-      <CodeBlock code={`"fmt": "ES256"   // default
-"fmt": "EIP712"`} language="json" />
-
-      <h2>URL Reference Example</h2>
-      <CodeBlock code={`"key": "https://example.com/.well-known/openclaiming.json#level1#level2"`} language="json" />
-      <p>
-        The fragment (#...) specifies a path inside the JSON document.
-        Each segment drills down one level into nested objects.
-      </p>
+      <h2>Key Types</h2>
+      <table>
+        <thead>
+          <tr><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>data:key/es256</code></td><td>embedded P-256 key (non-revocable)</td></tr>
+          <tr><td><code>data:key/eip712</code></td><td>EVM signer (non-revocable)</td></tr>
+          <tr><td><code>https://...</code></td><td>remote key set (revocable)</td></tr>
+        </tbody>
+      </table>
 
       <hr />
 
@@ -200,6 +215,8 @@ export default function Docs() {
       
       <p>Downstream, the claim can be canonicalized, hashed and signed using various standards.</p>
 
+      <p><strong>Important:</strong> Canonicalization applies only to the claim JSON itself. Resolved keys, fetched data, and external resources MUST NOT affect canonicalization.</p>
+
       <h2>ES256 (ECDSA using P-256 and SHA-256)</h2>
       <p>The default signature type for OpenClaiming is <strong>ES256</strong>, which uses:</p>
       <ul>
@@ -207,14 +224,16 @@ export default function Docs() {
         <li>P-256 curve (also known as secp256r1 or prime256v1)</li>
         <li>SHA-256 hashing</li>
       </ul>
-      <p>This combination provides strong cryptographic security with wide compatibility across platforms and languages. ES256 is the standard for JSON Web Signatures (JWS) and is supported natively in most cryptographic libraries.</p>
+      <p>ES256 is the standard for JSON Web Signatures (JWS) and is supported natively in most cryptographic libraries.</p>
 
-      <h2>EIP-712 (Ethereum Typed Structured Data)</h2>
-      <p>OpenClaiming also supports <strong>EIP-712</strong> signatures for blockchain compatibility. EIP-712 defines a standard for hashing and signing typed structured data, making it ideal for on-chain verification and smart contract integration.</p>
-      <p>
-        When using EIP-712, the claim is encoded according to the Ethereum typed data specification, allowing it to be verified efficiently in EVM-compatible smart contracts.
-        For complete details, see the <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md" target="_blank" rel="noopener noreferrer">EIP-712 specification</a> and the <a href="/EVMBlockchains">EVM Blockchains</a> documentation page.
-      </p>
+      <h2>EIP-712 (Separate Signing Profile)</h2>
+      <p>EIP-712 is a <strong>separate signing profile</strong> and does NOT sign canonical JSON. Instead:</p>
+      <ul>
+        <li>Claims are converted into typed structured data</li>
+        <li>Fields are mapped into fixed structs per extension</li>
+        <li>Addresses and numeric values are derived from identifiers</li>
+      </ul>
+      <p>EIP-712 canonicalization is extension-specific and MUST NOT be inferred from arbitrary JSON structure. For complete details, see <a href="/EVMBlockchains">EVM Blockchains</a>.</p>
 
       <hr />
 
@@ -233,48 +252,50 @@ export default function Docs() {
 
       <h1>Verification Process</h1>
       <ol>
-        <li>Extract the signatures.</li>
-        <li>Remove the <code>sig</code> field.</li>
-        <li>Canonicalize JSON.</li>
-        <li>Compute SHA-256 hash.</li>
-        <li>Obtain issuer public key.</li>
-        <li>Verify the signature.</li>
-        <li>Each signature MUST be verified independently against its corresponding key.</li>
+        <li>Receive claim</li>
+        <li>Canonicalize JSON (without <code>sig</code>)</li>
+        <li>Resolve keys</li>
+        <li>Verify each signature against its corresponding key</li>
+        <li>Check time constraints (<code>nbf</code>, <code>exp</code>)</li>
+        <li>Apply extension-specific logic</li>
+        <li>Accept or reject claim</li>
       </ol>
 
       <hr />
 
-      <h1>EIP-712 Support (v1)</h1>
-      <p>OpenClaiming supports EIP-712 signatures for efficient on-chain verification.</p>
+      <h1>Identifier Model</h1>
+      <p>Identifiers used in <code>iss</code>, <code>sub</code>, and <code>stm</code> fields are opaque strings interpreted by applications. Recommended format:</p>
+      <CodeBlock code={`<ecosystem>:<chain>:<type>:<value>`} language="text" />
+      <p>Examples:</p>
+      <CodeBlock code={`"iss": "evm:56:address:0xabc..."
+"sub": "evm:56:token:0xdef..."`} language="json" />
+      <p>Identifiers are NOT keys and MUST NOT use data URLs.</p>
 
-      <h2>Inference Rules</h2>
+      <hr />
+
+      <h1>Design Principle</h1>
+      <p>OpenClaim separates:</p>
+      <ul>
+        <li><strong>Identity</strong> — <code>iss</code>, <code>sub</code></li>
+        <li><strong>Cryptographic verification</strong> — <code>key</code>, <code>sig</code></li>
+        <li><strong>Execution semantics</strong> — extensions</li>
+      </ul>
+
+      <hr />
+
+      <h1>EIP-712 Support (v1)</h1>
+      <p>OpenClaiming supports EIP-712 as a separate signing profile for on-chain verification. Domain parameters are inferred deterministically from the claim:</p>
       <table>
         <thead>
-          <tr>
-            <th>Field</th>
-            <th>Source</th>
-          </tr>
+          <tr><th>Field</th><th>Source</th></tr>
         </thead>
         <tbody>
-          <tr>
-            <td><code>chainId</code></td>
-            <td>extracted from <code>iss</code></td>
-          </tr>
-          <tr>
-            <td><code>name</code></td>
-            <td>derived from extension (OpenClaiming.payments, etc.)</td>
-          </tr>
-          <tr>
-            <td><code>version</code></td>
-            <td>"1"</td>
-          </tr>
+          <tr><td><code>chainId</code></td><td>extracted from <code>iss</code></td></tr>
+          <tr><td><code>name</code></td><td>derived from extension (OpenClaiming.payments, etc.)</td></tr>
+          <tr><td><code>version</code></td><td>"1"</td></tr>
         </tbody>
       </table>
-
-      <p>
-        No domain or schema needs to be specified explicitly.
-        All values are inferred deterministically from the claim.
-      </p>
+      <p>No domain or schema needs to be specified explicitly. All values are inferred deterministically from the claim.</p>
 
       <hr />
 
@@ -345,24 +366,33 @@ export default function Docs() {
     "role": "moderator"
   },
   "nbf": 1712000000,
-  "key": {
-    "fmt": "ES256",
-    "crv": "P-256",
-    "x": "BASE64_X",
-    "y": "BASE64_Y"
-  },
+  "key": [
+    "data:key/es256;base64,MIIB..."
+  ],
   "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
 
       <hr />
 
+      <h1>Summary</h1>
+      <p>OpenClaim v1 defines:</p>
+      <ul>
+        <li>Deterministic canonical JSON signing</li>
+        <li>Key resolution via URLs and data URLs</li>
+        <li>Multi-signature support via <code>key</code>/<code>sig</code> arrays</li>
+        <li>Optional extensions using nested claims</li>
+        <li>Flexible trust models including revocable and immutable claims</li>
+      </ul>
+
+      <hr />
+
       <h1>Future Extensions</h1>
-      <p>Future versions may introduce embedded keys, Merkle proof inclusion, claim revocation mechanisms, and claim bundles.</p>
+      <p>Future versions may introduce Merkle proof inclusion, claim revocation mechanisms, and claim bundles.</p>
 
       <hr />
 
       <h1>Implementations</h1>
-      <p>Reference implementations are planned for JavaScript, Python, Go, Rust, PHP, Java, Kotlin, and Swift.</p>
+      <p>Reference implementations are available for JavaScript, Python, Go, Rust, PHP, Java, Kotlin, and Swift.</p>
       <p>Each implementation includes canonicalization, signing, verification, and test vectors.</p>
 
       <hr />

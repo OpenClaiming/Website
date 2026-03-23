@@ -33,13 +33,25 @@ export default function SecurityModel() {
       <hr />
 
       <h1>Identity Model</h1>
-      <p>Identifiers used in claims may include URLs, domain names, application user IDs, blockchain addresses, and decentralized identifiers. The protocol does not constrain identifier formats.</p>
+      <p>Identifiers used in <code>iss</code>, <code>sub</code>, and <code>stm</code> fields are opaque strings interpreted by applications. The recommended format is:</p>
+      <CodeBlock code={`<ecosystem>:<chain>:<type>:<value>`} language="text" />
+      <p>Identifiers are NOT keys. Keys use data URLs or HTTPS URLs for key material.</p>
 
       <hr />
 
       <h1>Key Ownership</h1>
       <p>Claims are authenticated through public-key cryptography. The issuer must control the private key corresponding to the public key used for verification.</p>
       <p>Public keys may be published through well-known endpoints, identity documents, application APIs, or blockchain registries.</p>
+
+      <hr />
+
+      <h1>Key Resolution Semantics</h1>
+      <p>If a key is a remote URL, its value is resolved at verification time. This implies:</p>
+      <ul>
+        <li>Claims using remote keys may change validity over time</li>
+        <li>Key rotation may invalidate previously valid claims</li>
+        <li>Verifiers MUST NOT modify the canonicalized payload based on resolved keys</li>
+      </ul>
 
       <hr />
 
@@ -66,8 +78,25 @@ export default function SecurityModel() {
 
       <hr />
 
-      <h1>Revocation</h1>
-      <p>OpenClaiming does not mandate a global revocation system. Possible revocation approaches include claim expiration, issuer-maintained revocation lists, publishing updated claims that supersede older ones, and blockchain anchoring.</p>
+      <h1>Revocable vs Non-Revocable Claims</h1>
+
+      <h2>Revocable Claims</h2>
+      <p>Claims using remote key references (e.g. HTTPS URLs) are revocable. If the remote key material changes, previously valid signatures may become invalid.</p>
+
+      <h2>Non-Revocable Claims</h2>
+      <p>Claims using embedded keys (e.g. <code>data:key/...</code>) are non-revocable. They remain verifiable indefinitely, assuming cryptographic assumptions hold.</p>
+
+      <h2>Summary</h2>
+      <table>
+        <thead>
+          <tr><th>Key Type</th><th>Behavior</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>data:key/...</code></td><td>immutable (non-revocable)</td></tr>
+          <tr><td>URL</td><td>revocable</td></tr>
+        </tbody>
+      </table>
+      <p>Other revocation approaches include claim expiration, issuer-maintained revocation lists, and blockchain anchoring.</p>
 
       <hr />
 

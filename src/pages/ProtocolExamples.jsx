@@ -20,7 +20,10 @@ export default function ProtocolExamples() {
   "stm": {
     "linked_account": "@alice"
   },
-  "sig": "BASE64_SIGNATURE"
+  "key": [
+    "data:key/es256;base64,MIIB..."
+  ],
+  "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
       <p>Publication: <code>https://example.com/.well-known/openclaim.json</code></p>
 
@@ -37,7 +40,10 @@ export default function ProtocolExamples() {
     "role": "moderator"
   },
   "exp": 1750000000,
-  "sig": "BASE64_SIGNATURE"
+  "key": [
+    "https://community.example/.well-known/openclaim.json#keys"
+  ],
+  "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
 
       <hr />
@@ -47,13 +53,16 @@ export default function ProtocolExamples() {
       <p><strong>Claim:</strong> Alice allows Bob to publish to stream Y</p>
       <CodeBlock code={`{
   "ocp": 1,
-  "iss": "alice",
-  "sub": "bob",
+  "iss": "evm:1:address:0xAlice...",
+  "sub": "evm:1:address:0xBob...",
   "stm": {
     "permission": "publish",
     "resource": "streamY"
   },
-  "sig": "BASE64_SIGNATURE"
+  "key": [
+    "data:key/es256;base64,MIIB..."
+  ],
+  "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
 
       <hr />
@@ -63,12 +72,15 @@ export default function ProtocolExamples() {
       <p><strong>Claim:</strong> Server A claims latest hash of stream Z is H</p>
       <CodeBlock code={`{
   "ocp": 1,
-  "iss": "serverA",
+  "iss": "https://serverA.example",
   "stm": {
     "stream": "Z",
     "latest_hash": "H"
   },
-  "sig": "BASE64_SIGNATURE"
+  "key": [
+    "https://serverA.example/.well-known/openclaim.json#keys"
+  ],
+  "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
       <p>Multiple servers may independently sign observations. Conflicting claims reveal dishonest actors.</p>
 
@@ -79,12 +91,15 @@ export default function ProtocolExamples() {
       <p><strong>Claim:</strong> siteA claims user123 equals siteB user456</p>
       <CodeBlock code={`{
   "ocp": 1,
-  "iss": "siteA",
-  "sub": "user123",
+  "iss": "https://siteA.example",
+  "sub": "https://siteA.example/user123",
   "stm": {
-    "same_as": "siteB:user456"
+    "same_as": "evm:1:address:0xSiteB..."
   },
-  "sig": "BASE64_SIGNATURE"
+  "key": [
+    "data:key/es256;base64,MIIB..."
+  ],
+  "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
 
       <hr />
@@ -101,13 +116,16 @@ export default function ProtocolExamples() {
       <p><strong>Claim:</strong> Server claims session key K belongs to user Alice</p>
       <CodeBlock code={`{
   "ocp": 1,
-  "iss": "auth.example",
-  "sub": "alice",
+  "iss": "https://auth.example",
+  "sub": "https://users.example/alice",
   "stm": {
     "session_key": "PUBLIC_KEY"
   },
   "exp": 1712003600,
-  "sig": "BASE64_SIGNATURE"
+  "key": [
+    "https://auth.example/.well-known/openclaim.json#keys"
+  ],
+  "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
       <p>Clients can present signed requests using the session key.</p>
 
@@ -117,14 +135,38 @@ export default function ProtocolExamples() {
       <p>Distributed nodes may publish claims about system state.</p>
       <CodeBlock code={`{
   "ocp": 1,
-  "iss": "nodeA",
+  "iss": "https://nodeA.example",
   "stm": {
     "object": "X",
     "hash": "H"
   },
-  "sig": "BASE64_SIGNATURE"
+  "key": [
+    "data:key/es256;base64,MIIB..."
+  ],
+  "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
       <p>Dishonest nodes are exposed if their signatures contradict each other.</p>
+
+      <hr />
+
+      <h1>Example 9 — Multi-Signature Claim</h1>
+      <p>A claim signed by multiple parties using different key types.</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "iss": "https://org.example",
+  "sub": "https://users.example/bob",
+  "stm": {
+    "approved": true
+  },
+  "key": [
+    "data:key/es256;base64,MIIB...",
+    "data:key/eip712;base64,0xSigner..."
+  ],
+  "sig": [
+    "BASE64_DER_SIGNATURE",
+    "0xHEX_EIP712_SIGNATURE"
+  ]
+}`} language="json" />
 
       <hr />
 
@@ -144,13 +186,15 @@ export default function ProtocolExamples() {
       <h1>Verification Flow</h1>
       <CodeBlock code={`Receive claim
 ↓
-Locate issuer public key
+Canonicalize JSON (without sig)
 ↓
-Canonicalize JSON
+Resolve keys
 ↓
-Verify signature
+Verify each signature against corresponding key
 ↓
-Check expiration
+Check time constraints
+↓
+Apply extension-specific logic
 ↓
 Accept or reject claim`} language="text" />
 

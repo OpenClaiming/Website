@@ -114,14 +114,11 @@ export default function PaymentsExtension() {
   "stm": {
     "recipients": ["evm:53:address:0x...recipient"],
     "max": "3000000",
-    "line": 7
+    "line": "7"
   },
-  "key": {
-    "fmt": "ES256",
-    "crv": "P-256",
-    "x": "BASE64_X",
-    "y": "BASE64_Y"
-  },
+  "key": [
+    "data:key/es256;base64,MIIB..."
+  ],
   "sig": ["BASE64_SIGNATURE"]
 }`}
         language="json"
@@ -136,9 +133,11 @@ export default function PaymentsExtension() {
   "stm": {
     "recipients": ["qbix:user:someUserId"],
     "max": "133.50",
-    "line": 7
+    "line": "7"
   },
-  "key": "https://community.example/.well-known/openclaiming.json#payerKey",
+  "key": [
+    "https://community.example/.well-known/openclaiming.json#payerKey"
+  ],
   "sig": ["BASE64_SIGNATURE"]
 }`}
         language="json"
