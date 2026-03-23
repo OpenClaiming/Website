@@ -6,97 +6,407 @@ const implementations = {
   javascript: {
     label: "JavaScript",
     code: `// Optional strict canonicalizer:
-// npm install json-canonicalize
+// Maven:
+// <dependency>
+//   <groupId>org.webpki</groupId>
+//   <artifactId>json-canonicalization</artifactId>
+// </dependency>
 // https://github.com/cyberphone/json-canonicalization
+//
+// HTTP fetch:
+// Uses java.net.URL (built-in)
+//
+// Base64:
+// Uses java.util.Base64
+//
+// JSON:
+// Uses Jackson (com.fasterxml.jackson.databind)
+//
+// P-256 / ECDSA:
+// Uses java.security (EC)
+//
+// SHA-256:
+// Uses java.security.MessageDigest
+//
+// Note:
+// Fallback canonicalization:
+// - lexicographically sorted keys
+// - arrays preserved
+// - numbers converted to strings
+// - no whitespace
+//
+// Signing model:
+// signature = sign( SHA256(canonicalized_claim) )
 
-import crypto from "crypto"
+package openclaiming;
 
-let strictCanonicalize = null
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.webpki.json.JSONCanonicalizer;
 
-try {
-  strictCanonicalize = require("json-canonicalize").canonicalize
-} catch {}
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-function normalize(v) {
+public class OpenClaim {
 
-  if (Array.isArray(v)) {
-    return v.map(normalize)
-  }
+	private static final ObjectMapper mapper = new ObjectMapper();
 
-  if (v && typeof v === "object") {
+	static {
+		mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+	}
 
-    const out = {}
+	// ---------- CACHE ----------
 
-    for (const k of Object.keys(v).sort()) {
-      out[k] = normalize(v[k])
-    }
+	private static final long TTL = 60_000;
 
-    return out
-  }
+	private static class CacheEntry<T> {
+		long time;
+		T value;
+		CacheEntry(long t, T v) { time = t; value = v; }
+	}
 
-  if (typeof v === "number") {
-    return Number(v).toString()
-  }
+	private static final Map<String, CacheEntry<String>> urlCache = new ConcurrentHashMap<>();
+	private static final Map<String, CacheEntry<Object>> keyCache = new ConcurrentHashMap<>();
+	private static final Map<String, CacheEntry<PublicKey>> pubKeyCache = new ConcurrentHashMap<>();
 
-  return v
-}
+	private static long now() {
+		return System.currentTimeMillis();
+	}
 
-export class OpenClaim {
+	private static <T> T getCache(Map<String, CacheEntry<T>> map, String key) {
+		CacheEntry<T> e = map.get(key);
+		if (e != null && now() - e.time < TTL) return e.value;
+		map.remove(key);
+		return null;
+	}
 
-  static canonicalize(claim) {
+	private static <T> void setCache(Map<String, CacheEntry<T>> map, String key, T value) {
+		map.put(key, new CacheEntry<>(now(), value));
+	}
 
-    const obj = { ...claim }
-    delete obj.sig
+	// ---------- NORMALIZATION ----------
 
-    if (strictCanonicalize) {
-      return strictCanonicalize(obj)
-    }
+	private static Object normalize(Object v) {
 
-    return JSON.stringify(normalize(obj))
-  }
+		if (v instanceof Map<?,?> map) {
 
-  static sign(claim, privateKeyPem) {
+			Map<String,Object> sorted = new TreeMap<>();
 
-    const canon = OpenClaim.canonicalize(claim)
+			for (var e : map.entrySet()) {
+				sorted.put(e.getKey().toString(), normalize(e.getValue()));
+			}
 
-    const hash = crypto
-      .createHash("sha256")
-      .update(canon)
-      .digest()
+			return sorted;
+		}
 
-    const signer = crypto.createSign("SHA256")
+		if (v instanceof List<?> list) {
 
-    signer.update(hash)
-    signer.end()
+			List<Object> out = new ArrayList<>();
 
-    const sig = signer
-      .sign(privateKeyPem)
-      .toString("base64")
+			for (Object x : list) {
+				out.add(normalize(x));
+			}
 
-    return { ...claim, sig }
-  }
+			return out;
+		}
 
-  static verify(claim, publicKeyPem) {
+		if (v instanceof Number) {
+			return v.toString();
+		}
 
-    if (!claim.sig) return false
+		return v;
+	}
 
-    const canon = OpenClaim.canonicalize(claim)
+	// ---------- CANONICALIZATION ----------
 
-    const hash = crypto
-      .createHash("sha256")
-      .update(canon)
-      .digest()
+	private static byte[] fallbackCanonicalize(Map<String,Object> claim) throws Exception {
 
-    const verifier = crypto.createVerify("SHA256")
+		Map<String,Object> obj = new HashMap<>(claim);
+		obj.remove("sig");
 
-    verifier.update(hash)
-    verifier.end()
+		Object normalized = normalize(obj);
 
-    return verifier.verify(
-      publicKeyPem,
-      Buffer.from(claim.sig, "base64")
-    )
-  }
+		return mapper.writeValueAsBytes(normalized);
+	}
+
+	public static byte[] canonicalize(Map<String,Object> claim) throws Exception {
+
+		Map<String,Object> obj = new HashMap<>(claim);
+		obj.remove("sig");
+
+		try {
+			String json = mapper.writeValueAsString(obj);
+			return new JSONCanonicalizer(json).getEncodedUTF8();
+		} catch (Exception e) {
+			return fallbackCanonicalize(claim);
+		}
+	}
+
+	// ---------- HASH ----------
+
+	private static byte[] sha256(byte[] data) throws Exception {
+		MessageDigest md = MessageDigest.getInstance("SHA-256");
+		return md.digest(data);
+	}
+
+	// ---------- PEM / DER ----------
+
+	private static String derToPem(String base64) {
+		return "-----BEGIN PUBLIC KEY-----\n" + base64 + "\n-----END PUBLIC KEY-----";
+	}
+
+	private static PublicKey getCachedPublicKey(String base64) throws Exception {
+
+		PublicKey cached = getCache(pubKeyCache, base64);
+		if (cached != null) return cached;
+
+		byte[] decoded = Base64.getDecoder().decode(base64);
+		KeyFactory kf = KeyFactory.getInstance("EC");
+		PublicKey key = kf.generatePublic(new X509EncodedKeySpec(decoded));
+
+		setCache(pubKeyCache, base64, key);
+		return key;
+	}
+
+	// ---------- DATA KEY ----------
+
+	private static Map<String,Object> parseDataKey(String key) {
+
+		if (!key.startsWith("data:key/")) return null;
+
+		int idx = key.indexOf(",");
+		if (idx < 0) return null;
+
+		String meta = key.substring(5, idx);
+		String data = key.substring(idx + 1);
+
+		String[] parts = meta.split(";");
+		String fmt = parts[0].replace("key/", "").toUpperCase();
+
+		String encoding = "raw";
+		for (int i = 1; i < parts.length; i++) {
+			if (parts[i].equals("base64")) encoding = "base64";
+			if (parts[i].equals("base64url")) encoding = "base64url";
+		}
+
+		Object value = data;
+
+		if (encoding.equals("base64")) {
+			value = Base64.getDecoder().decode(data);
+		}
+
+		return Map.of("fmt", fmt, "value", value);
+	}
+
+	// ---------- FETCH ----------
+
+	private static String fetchJson(String url) {
+
+		String cached = getCache(urlCache, url);
+		if (cached != null) return cached;
+
+		String data = null;
+
+		try {
+			BufferedReader in = new BufferedReader(
+				new InputStreamReader(new URL(url).openStream())
+			);
+
+			StringBuilder sb = new StringBuilder();
+			String line;
+
+			while ((line = in.readLine()) != null) {
+				sb.append(line);
+			}
+
+			in.close();
+			data = sb.toString();
+
+		} catch (Exception ignored) {}
+
+		setCache(urlCache, url, data);
+		return data;
+	}
+
+	// ---------- KEY RESOLUTION ----------
+
+	private static Object resolveKey(String key, Set<String> seen) throws Exception {
+
+		if (seen.contains(key)) {
+			throw new RuntimeException("OpenClaim: cyclic key reference detected");
+		}
+
+		Object cached = getCache(keyCache, key);
+		if (cached != null) return cached;
+
+		Set<String> next = new HashSet<>(seen);
+		next.add(key);
+
+		if (key.startsWith("data:key/")) {
+			Object parsed = parseDataKey(key);
+			setCache(keyCache, key, parsed);
+			return parsed;
+		}
+
+		if (key.startsWith("http")) {
+
+			String[] parts = key.split("#");
+			String raw = fetchJson(parts[0]);
+			if (raw == null) return null;
+
+			Object json = mapper.readValue(raw, Map.class);
+			Object current = json;
+
+			for (int i = 1; i < parts.length; i++) {
+				if (current instanceof Map<?,?> m) {
+					current = m.get(parts[i]);
+				}
+			}
+
+			if (current instanceof List<?>) {
+				setCache(keyCache, key, current);
+				return current;
+			}
+
+			if (current instanceof String s) {
+				Object resolved = resolveKey(s, next);
+				setCache(keyCache, key, resolved);
+				return resolved;
+			}
+
+			return null;
+		}
+
+		int idx = key.indexOf(":");
+		if (idx > 0) {
+			Map<String,Object> result = Map.of(
+				"fmt", key.substring(0, idx).toUpperCase(),
+				"value", key.substring(idx + 1)
+			);
+			setCache(keyCache, key, result);
+			return result;
+		}
+
+		return null;
+	}
+
+	// ---------- SIGN ----------
+
+	public static Map<String,Object> sign(
+		Map<String,Object> claim,
+		PrivateKey privateKey
+	) throws Exception {
+
+		PublicKey pub = KeyFactory.getInstance("EC")
+			.generatePublic(new X509EncodedKeySpec(
+				KeyFactory.getInstance("EC")
+					.getKeySpec(privateKey, X509EncodedKeySpec.class)
+					.getEncoded()
+			));
+
+		String keyStr = "data:key/es256;base64," +
+			Base64.getEncoder().encodeToString(pub.getEncoded());
+
+		List<String> keys = new ArrayList<>();
+		if (claim.get("key") instanceof List<?> list) {
+			for (Object o : list) keys.add(o.toString());
+		}
+
+		if (!keys.contains(keyStr)) keys.add(keyStr);
+
+		Collections.sort(keys);
+
+		List<String> sigs = new ArrayList<>();
+		if (claim.get("sig") instanceof List<?> list) {
+			for (Object o : list) sigs.add(o == null ? null : o.toString());
+		}
+
+		while (sigs.size() < keys.size()) sigs.add(null);
+
+		int index = keys.indexOf(keyStr);
+
+		Map<String,Object> tmp = new HashMap<>(claim);
+		tmp.put("key", keys);
+		tmp.put("sig", sigs);
+
+		byte[] canon = canonicalize(tmp);
+		byte[] hash = sha256(canon);
+
+		Signature signer = Signature.getInstance("NONEwithECDSA");
+		signer.initSign(privateKey);
+		signer.update(hash);
+
+		String sig = Base64.getEncoder().encodeToString(signer.sign());
+
+		sigs.set(index, sig);
+
+		Map<String,Object> out = new HashMap<>(claim);
+		out.put("key", keys);
+		out.put("sig", sigs);
+
+		return out;
+	}
+
+	// ---------- VERIFY ----------
+
+	public static boolean verify(Map<String,Object> claim) throws Exception {
+
+		List<String> keys = (List<String>) claim.get("key");
+		List<String> sigs = (List<String>) claim.get("sig");
+
+		if (keys == null || keys.isEmpty()) {
+			throw new RuntimeException("OpenClaim: missing public keys");
+		}
+
+		Map<String,Object> tmp = new HashMap<>(claim);
+		tmp.put("key", keys);
+		tmp.put("sig", sigs);
+
+		byte[] canon = canonicalize(tmp);
+		byte[] hash = sha256(canon);
+
+		int valid = 0;
+
+		for (int i = 0; i < keys.size(); i++) {
+
+			String sigB64 = sigs.get(i);
+			if (sigB64 == null) continue;
+
+			Object resolved = resolveKey(keys.get(i), new HashSet<>());
+
+			List<Object> objs = resolved instanceof List<?> l ? (List<Object>) l : List.of(resolved);
+
+			for (Object obj : objs) {
+
+				if (!(obj instanceof Map<?,?> m)) continue;
+
+				if (!"ES256".equals(m.get("fmt"))) continue;
+
+				String der = m.get("value") instanceof byte[]
+					? Base64.getEncoder().encodeToString((byte[]) m.get("value"))
+					: m.get("value").toString();
+
+				PublicKey pub = getCachedPublicKey(der);
+
+				Signature verifier = Signature.getInstance("NONEwithECDSA");
+				verifier.initVerify(pub);
+				verifier.update(hash);
+
+				if (verifier.verify(Base64.getDecoder().decode(sigB64))) {
+					valid++;
+					break;
+				}
+			}
+		}
+
+		return valid >= 1;
+	}
 }`,
   },
   python: {
