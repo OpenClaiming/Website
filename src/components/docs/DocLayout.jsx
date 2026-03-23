@@ -10,7 +10,7 @@ const docNav = [
   { label: "Implementations", path: "/Implementations", section: "Protocol" },
   { label: "Overview", path: "/Extensions", section: "Extensions" },
   { label: "Payments", path: "/PaymentsExtension", section: "Extensions" },
-  { label: "Authorizations", path: "/AuthorizationsExtension", section: "Extensions" },
+  { label: "Actions", path: "/ActionsExtension", section: "Extensions" },
   { label: "EVM Blockchains", path: "/EVMBlockchains", section: "Extensions" },
 ];
 

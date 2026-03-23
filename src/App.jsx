@@ -11,7 +11,7 @@ import Home from './pages/Home';
 import Docs from './pages/Docs';
 import Extensions from './pages/Extensions';
 import PaymentsExtension from './pages/PaymentsExtension';
-import AuthorizationsExtension from './pages/AuthorizationsExtension';
+import ActionsExtension from './pages/ActionsExtension';
 import SecurityModel from './pages/SecurityModel';
 import ProtocolExamples from './pages/ProtocolExamples';
 import DesignPhilosophy from './pages/DesignPhilosophy';
@@ -47,7 +47,7 @@ const AuthenticatedApp = () => {
         <Route path="/Docs" element={<Docs />} />
         <Route path="/Extensions" element={<Extensions />} />
         <Route path="/PaymentsExtension" element={<PaymentsExtension />} />
-        <Route path="/AuthorizationsExtension" element={<AuthorizationsExtension />} />
+        <Route path="/ActionsExtension" element={<ActionsExtension />} />
         <Route path="/SecurityModel" element={<SecurityModel />} />
         <Route path="/ProtocolExamples" element={<ProtocolExamples />} />
         <Route path="/DesignPhilosophy" element={<DesignPhilosophy />} />

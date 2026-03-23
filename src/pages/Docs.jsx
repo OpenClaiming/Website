@@ -141,9 +141,9 @@ export default function Docs() {
             <td>array of payment claims</td>
           </tr>
           <tr>
-            <td><code>authorizations</code></td>
+            <td><code>actions</code></td>
             <td>optional</td>
-            <td>array of authorization claims</td>
+            <td>array of execution invocation claims</td>
           </tr>
         </tbody>
       </table>

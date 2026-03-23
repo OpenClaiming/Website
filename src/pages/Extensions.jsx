@@ -44,9 +44,9 @@ export default function Extensions() {
             <td>array of payment claims</td>
           </tr>
           <tr>
-            <td><code>authorizations</code></td>
+            <td><code>actions</code></td>
             <td>optional</td>
-            <td>array of authorization claims</td>
+            <td>array of execution invocation claims</td>
           </tr>
         </tbody>
       </table>
@@ -98,10 +98,23 @@ export default function Extensions() {
 
       <hr />
 
+      <h1>Summary</h1>
+      <p>OpenClaim defines two standard extensions:</p>
+      <table>
+        <thead>
+          <tr><th>Extension</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>payments</code></td><td>value transfer authorization</td></tr>
+          <tr><td><code>actions</code></td><td>execution authorization (invocations)</td></tr>
+        </tbody>
+      </table>
+      <p>Both support multisig, EIP-712, and may require contract-level validation.</p>
+
       <h1>Available Extensions</h1>
       <ul>
         <li><strong>Payments</strong> — Spending authorizations for tokens and assets</li>
-        <li><strong>Authorizations</strong> — Role and permission grants</li>
+        <li><strong>Actions</strong> — Execution invocations with multisig and quorum support</li>
       </ul>
       <p>See individual extension pages for detailed specifications and examples.</p>
     </DocLayout>

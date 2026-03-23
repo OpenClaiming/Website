@@ -170,6 +170,38 @@ export default function ProtocolExamples() {
 
       <hr />
 
+      <h1>Example 10 — Multi-Step Execution (Actions)</h1>
+      <p>A governance action requiring multiple approvals before execution.</p>
+      <CodeBlock code={`{
+  "ocp": 1,
+  "actions": [
+    {
+      "ocp": 1,
+      "iss": "evm:56:address:0xAuthority",
+      "sub": "evm:56:address:0xControlContract",
+      "stm": {
+        "contract": "evm:56:address:0xToken",
+        "method": "a9059cbb",
+        "params": "000000...",
+        "minimum": "2",
+        "fraction": "5000000000",
+        "delay": "3600"
+      },
+      "key": [
+        "data:key/eip712,evm:56:address:0xSigner1",
+        "data:key/eip712,evm:56:address:0xSigner2"
+      ],
+      "sig": [
+        "0x...",
+        "0x..."
+      ]
+    }
+  ]
+}`} language="json" />
+      <p>This maps to a ControlContract flow: <strong>invoke → endorse → quorum → execute</strong>. Execution is NOT guaranteed immediately — quorum and delay conditions must be met.</p>
+
+      <hr />
+
       <h1>Claim Bundles</h1>
       <p>Multiple claims may be distributed together.</p>
       <CodeBlock code={`{

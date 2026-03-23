@@ -133,6 +133,17 @@ export default function SecurityModel() {
 
       <hr />
 
+      <h1>Actions Execution Model</h1>
+      <p>Actions may require:</p>
+      <ul>
+        <li>multiple approvals (multisig)</li>
+        <li>contract-level authorization</li>
+        <li>time delays before execution</li>
+      </ul>
+      <p><strong>Even valid signatures may not result in execution.</strong> Execution depends on quorum rules, contract logic, role permissions, and time delays.</p>
+
+      <hr />
+
       <h1>Summary</h1>
       <p>OpenClaiming provides a minimal cryptographic primitive:</p>
       <CodeBlock code={`Signed statement → verifiable by anyone`} language="text" />
