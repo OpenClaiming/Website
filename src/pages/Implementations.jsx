@@ -6,407 +6,516 @@ const implementations = {
   javascript: {
     label: "JavaScript",
     code: `// Optional strict canonicalizer:
-// Maven:
-// <dependency>
-//   <groupId>org.webpki</groupId>
-//   <artifactId>json-canonicalization</artifactId>
-// </dependency>
+// npm install json-canonicalize
 // https://github.com/cyberphone/json-canonicalization
-//
-// HTTP fetch:
-// Uses java.net.URL (built-in)
-//
-// Base64:
-// Uses java.util.Base64
-//
-// JSON:
-// Uses Jackson (com.fasterxml.jackson.databind)
-//
-// P-256 / ECDSA:
-// Uses java.security (EC)
-//
-// SHA-256:
-// Uses java.security.MessageDigest
-//
-// Note:
-// Fallback canonicalization:
-// - lexicographically sorted keys
-// - arrays preserved
-// - numbers converted to strings
-// - no whitespace
-//
-// Signing model:
-// signature = sign( SHA256(canonicalized_claim) )
 
-package openclaiming;
+import crypto from "crypto"
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import org.webpki.json.JSONCanonicalizer;
+let strictCanonicalize = null
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+try {
+  strictCanonicalize = require("json-canonicalize").canonicalize
+} catch {}
 
-public class OpenClaim {
-
-	private static final ObjectMapper mapper = new ObjectMapper();
+// ---------- ENV DETECTION ----------
 
-	static {
-		mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-	}
+const isNode = typeof process !== "undefined" && process.versions?.node
+const subtle = (typeof crypto !== "undefined" && crypto.webcrypto?.subtle)
+  || (typeof window !== "undefined" && window.crypto?.subtle)
 
-	// ---------- CACHE ----------
+// ---------- CACHE ----------
 
-	private static final long TTL = 60_000;
+const CACHE_TTL = 60_000 // 60 seconds
 
-	private static class CacheEntry<T> {
-		long time;
-		T value;
-		CacheEntry(long t, T v) { time = t; value = v; }
-	}
+const urlCache = new Map()
+const keyCache = new Map()
+const pubKeyCache = new Map()
 
-	private static final Map<String, CacheEntry<String>> urlCache = new ConcurrentHashMap<>();
-	private static final Map<String, CacheEntry<Object>> keyCache = new ConcurrentHashMap<>();
-	private static final Map<String, CacheEntry<PublicKey>> pubKeyCache = new ConcurrentHashMap<>();
+function now() {
+  return Date.now()
+}
 
-	private static long now() {
-		return System.currentTimeMillis();
-	}
+function getCache(map, key) {
+  if (!map.has(key)) return null
 
-	private static <T> T getCache(Map<String, CacheEntry<T>> map, String key) {
-		CacheEntry<T> e = map.get(key);
-		if (e != null && now() - e.time < TTL) return e.value;
-		map.remove(key);
-		return null;
-	}
+  const entry = map.get(key)
 
-	private static <T> void setCache(Map<String, CacheEntry<T>> map, String key, T value) {
-		map.put(key, new CacheEntry<>(now(), value));
-	}
+  if (now() > entry.exp) {
+    map.delete(key)
+    return null
+  }
+
+  return entry.val
+}
+
+function setCache(map, key, val) {
+  map.set(key, {
+    val,
+    exp: now() + CACHE_TTL
+  })
+}
+
+// ---------- EXISTING ----------
+
+function normalize(v) {
+
+  if (Array.isArray(v)) {
+    return v.map(normalize)
+  }
+
+  if (v && typeof v === "object") {
 
-	// ---------- NORMALIZATION ----------
+    const out = {}
+
+    for (const k of Object.keys(v).sort()) {
+      out[k] = normalize(v[k])
+    }
+
+    return out
+  }
+
+  if (typeof v === "number") {
+    return Number(v).toString()
+  }
+
+  return v
+}
 
-	private static Object normalize(Object v) {
+function toArray(v) {
+  if (v == null) return []
+  return Array.isArray(v) ? v : [v]
+}
+
+function normalizeSignatures(v) {
+  const arr = toArray(v)
+  return arr.map(x => x == null ? null : String(x))
+}
+
+function ensureStringKeys(keys) {
+  for (const k of keys) {
+    if (typeof k !== "string") {
+      throw new Error("OpenClaim: all keys must be strings")
+    }
+  }
+}
+
+function ensureUniqueKeys(keys) {
+  const seen = new Set()
+
+  for (const k of keys) {
+    if (seen.has(k)) {
+      throw new Error("OpenClaim: duplicate keys are not allowed")
+    }
+    seen.add(k)
+  }
+}
+
+function ensureSortedKeys(keys) {
+  const sorted = [...keys].sort()
+
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i] !== sorted[i]) {
+      throw new Error("OpenClaim: key array must be lexicographically sorted")
+    }
+  }
+}
+
+function derivePublicKeyPem(privateKeyPem) {
+  if (!isNode) {
+    throw new Error("OpenClaim: derivePublicKeyPem requires Node")
+  }
+  return crypto
+    .createPublicKey(privateKeyPem)
+    .export({ type: "spki", format: "pem" })
+    .toString()
+}
+
+function stripPemHeaders(pem) {
+  return pem
+    .replace(/-----BEGIN PUBLIC KEY-----/g, "")
+    .replace(/-----END PUBLIC KEY-----/g, "")
+    .replace(/\s+/g, "")
+}
+
+function derToPem(base64Der) {
+  const body = String(base64Der).replace(/\s+/g, "")
+  const lines = body.match(/.{1,64}/g) || []
+  return [
+    "-----BEGIN PUBLIC KEY-----",
+    ...lines,
+    "-----END PUBLIC KEY-----"
+  ].join("\n")
+}
+
+function pemToDer(pem) {
+  return stripPemHeaders(String(pem))
+}
+
+function isPemPublicKey(v) {
+  return typeof v === "string" && v.includes("BEGIN PUBLIC KEY")
+}
+
+function toEs256KeyStringFromPublicPem(publicKeyPem) {
+  return "data:key/es256;base64," + pemToDer(publicKeyPem)
+}
+
+// ---------- HASH ----------
+
+function sha256(bufOrString) {
+
+  if (isNode) {
+    return Promise.resolve(
+      crypto.createHash("sha256").update(bufOrString).digest()
+    )
+  }
+
+  return subtle.digest("SHA-256",
+    typeof bufOrString === "string"
+      ? new TextEncoder().encode(bufOrString)
+      : bufOrString
+  ).then(buf => new Uint8Array(buf))
+}
+
+// ---------- CRYPTO ----------
+
+function signAsync(privateKeyPem, hash) {
+
+  if (isNode) {
+    return Promise.resolve(
+      crypto.sign(null, hash, privateKeyPem)
+    )
+  }
+
+  return importPrivateKey(privateKeyPem).then(key =>
+    subtle.sign(
+      { name: "ECDSA", hash: "SHA-256" },
+      key,
+      hash
+    )
+  ).then(sig => new Uint8Array(sig))
+}
+
+function verifyAsync(publicKeyPem, sig, hash) {
+
+  if (isNode) {
+    return Promise.resolve(
+      crypto.verify(null, hash, publicKeyPem, sig)
+    )
+  }
+
+  return importPublicKey(publicKeyPem).then(key =>
+    subtle.verify(
+      { name: "ECDSA", hash: "SHA-256" },
+      key,
+      sig,
+      hash
+    )
+  )
+}
+
+// ---------- WEBCRYPTO IMPORT ----------
+
+function importPublicKey(pem) {
+  const der = base64ToArrayBuffer(pemToDer(pem))
+  return subtle.importKey("spki", der,
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["verify"]
+  )
+}
+
+function importPrivateKey(pem) {
+  const der = base64ToArrayBuffer(
+    pem.replace(/-----.*PRIVATE KEY-----/g, "").replace(/\s+/g, "")
+  )
+  return subtle.importKey("pkcs8", der,
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"]
+  )
+}
+
+function base64ToArrayBuffer(b64) {
+  const bin = atob(b64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) {
+    bytes[i] = bin.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+// ---------- PUBLIC KEY CACHE ----------
+
+function getCachedPublicKey(base64Der) {
+
+  const cached = getCache(pubKeyCache, base64Der)
+  if (cached !== null) return cached
+
+  const pem = derToPem(base64Der)
+
+  setCache(pubKeyCache, base64Der, pem)
+
+  return pem
+}
+
+// ---------- DATA KEY PARSER ----------
+
+function parseDataKey(keyStr) {
+
+  if (!keyStr.startsWith("data:key/")) return null
+
+  const idx = keyStr.indexOf(",")
+  if (idx < 0) return null
+
+  const meta = keyStr.slice(5, idx)
+  const data = keyStr.slice(idx + 1)
+
+  const [typePart, ...params] = meta.split(";")
+  const type = typePart.replace("key/", "").toUpperCase()
+
+  let encoding = "raw"
+
+  for (const p of params) {
+    if (p === "base64") encoding = "base64"
+    if (p === "base64url") encoding = "base64url"
+  }
+
+  let value = data
+
+  if (encoding === "base64") {
+    value = Buffer.from(data, "base64")
+  }
+
+  if (encoding === "base64url") {
+    const pad = data.length % 4
+    const b64 = data.replace(/-/g, "+").replace(/_/g, "/") +
+      (pad ? "=".repeat(4 - pad) : "")
+    value = Buffer.from(b64, "base64")
+  }
+
+  return { fmt: type, value }
+}
+
+// ---------- FETCH ----------
+
+function fetchJson(url) {
+
+  const cached = getCache(urlCache, url)
+  if (cached !== null) return Promise.resolve(cached)
+
+  return fetch(url)
+    .then(r => r.ok ? r.json() : null)
+    .catch(() => null)
+    .then(json => {
+      setCache(urlCache, url, json)
+      return json
+    })
+}
+
+// ---------- KEY RESOLUTION ----------
+
+function resolveKeyString(keyStr, seen = new Set()) {
+
+  if (seen.has(keyStr)) {
+    return Promise.reject(
+      new Error("OpenClaim: cyclic key reference detected")
+    )
+  }
+
+  const cached = getCache(keyCache, keyStr)
+  if (cached !== null) return Promise.resolve(cached)
+
+  const nextSeen = new Set(seen)
+  nextSeen.add(keyStr)
+
+  if (keyStr.startsWith("data:key/")) {
+    const parsed = parseDataKey(keyStr)
+    if (parsed) {
+      setCache(keyCache, keyStr, parsed)
+      return Promise.resolve(parsed)
+    }
+  }
+
+  if (keyStr.startsWith("http")) {
+    const [url, ...path] = keyStr.split("#")
+
+    return fetchJson(url).then(json => {
+
+      if (!json) return null
+
+      let current = json
+
+      path.forEach(p => {
+        if (p) current = current?.[p]
+      })
+
+      if (Array.isArray(current)) return current
+
+      if (typeof current === "string") {
+        return resolveKeyString(current, nextSeen)
+      }
+
+      return null
+    }).then(res => {
+      setCache(keyCache, keyStr, res)
+      return res
+    })
+  }
+
+  const idx = keyStr.indexOf(":")
+  if (idx > 0) {
+    const result = {
+      fmt: keyStr.slice(0, idx).toUpperCase(),
+      value: keyStr.slice(idx + 1)
+    }
+    setCache(keyCache, keyStr, result)
+    return Promise.resolve(result)
+  }
+
+  return Promise.resolve(null)
+}
+
+// ---------- EXISTING ----------
+
+function buildSortedKeyState(keysInput, signaturesInput) {
+  const keys = toArray(keysInput).slice()
+  const signatures = normalizeSignatures(signaturesInput)
+
+  ensureStringKeys(keys)
+  ensureUniqueKeys(keys)
+
+  if (signatures.length > keys.length) {
+    throw new Error("OpenClaim: signature array cannot be longer than key array")
+  }
+
+  const pairs = keys.map((key, i) => ({
+    key,
+    sig: i < signatures.length ? signatures[i] : null
+  }))
+
+  pairs.sort((a, b) => a.key.localeCompare(b.key))
+
+  const sortedKeys = pairs.map(p => p.key)
+  const sortedSignatures = pairs.map(p => p.sig)
 
-		if (v instanceof Map<?,?> map) {
+  ensureSortedKeys(sortedKeys)
 
-			Map<String,Object> sorted = new TreeMap<>();
+  return {
+    keys: sortedKeys,
+    signatures: sortedSignatures
+  }
+}
 
-			for (var e : map.entrySet()) {
-				sorted.put(e.getKey().toString(), normalize(e.getValue()));
-			}
+function parseVerifyPolicy(policy, totalKeys) {
+  if (policy == null) return { minValid: 1 }
+  if (typeof policy === "number") return { minValid: policy }
+  if (policy.mode === "all") return { minValid: totalKeys }
+  if (typeof policy.minValid === "number") return { minValid: policy.minValid }
+  return { minValid: 1 }
+}
 
-			return sorted;
-		}
+// ---------- MAIN ----------
 
-		if (v instanceof List<?> list) {
+export class OpenClaim {
 
-			List<Object> out = new ArrayList<>();
+  static canonicalize(claim) {
+    const obj = { ...claim }
+    delete obj.sig
+    if (strictCanonicalize) return strictCanonicalize(obj)
+    return JSON.stringify(normalize(obj))
+  }
 
-			for (Object x : list) {
-				out.add(normalize(x));
-			}
+  static sign(claim, privateKeyPem, existing = {}) {
 
-			return out;
-		}
+    const signerPublicKeyPem = derivePublicKeyPem(privateKeyPem)
+    const signerKey = toEs256KeyStringFromPublicPem(signerPublicKeyPem)
 
-		if (v instanceof Number) {
-			return v.toString();
-		}
+    let keys = toArray(existing.keys ?? claim.key)
+    let sigs = normalizeSignatures(existing.signatures ?? claim.sig)
 
-		return v;
-	}
+    if (!keys.length) keys = [signerKey]
+    else if (!keys.includes(signerKey)) keys.push(signerKey)
 
-	// ---------- CANONICALIZATION ----------
+    const state = buildSortedKeyState(keys, sigs)
 
-	private static byte[] fallbackCanonicalize(Map<String,Object> claim) throws Exception {
+    const tmp = {
+      ...claim,
+      key: state.keys,
+      sig: state.signatures
+    }
 
-		Map<String,Object> obj = new HashMap<>(claim);
-		obj.remove("sig");
+    const canon = OpenClaim.canonicalize(tmp)
 
-		Object normalized = normalize(obj);
+    return sha256(canon)
+      .then(hash => signAsync(privateKeyPem, hash))
+      .then(sig => {
 
-		return mapper.writeValueAsBytes(normalized);
-	}
+        const i = state.keys.indexOf(signerKey)
+        state.signatures[i] = Buffer.from(sig).toString("base64")
 
-	public static byte[] canonicalize(Map<String,Object> claim) throws Exception {
+        return {
+          ...claim,
+          key: state.keys,
+          sig: state.signatures
+        }
+      })
+  }
 
-		Map<String,Object> obj = new HashMap<>(claim);
-		obj.remove("sig");
+  static verify(claim, policy = {}) {
 
-		try {
-			String json = mapper.writeValueAsString(obj);
-			return new JSONCanonicalizer(json).getEncodedUTF8();
-		} catch (Exception e) {
-			return fallbackCanonicalize(claim);
-		}
-	}
+    let keys = toArray(claim.key)
+    let sigs = normalizeSignatures(claim.sig)
 
-	// ---------- HASH ----------
+    if (!keys.length) {
+      return Promise.reject(
+        new Error("OpenClaim: missing public keys")
+      )
+    }
 
-	private static byte[] sha256(byte[] data) throws Exception {
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-		return md.digest(data);
-	}
+    const state = buildSortedKeyState(keys, sigs)
 
-	// ---------- PEM / DER ----------
+    const tmp = {
+      ...claim,
+      key: state.keys,
+      sig: state.signatures
+    }
 
-	private static String derToPem(String base64) {
-		return "-----BEGIN PUBLIC KEY-----\n" + base64 + "\n-----END PUBLIC KEY-----";
-	}
+    const canon = OpenClaim.canonicalize(tmp)
 
-	private static PublicKey getCachedPublicKey(String base64) throws Exception {
+    return sha256(canon).then(hash => {
 
-		PublicKey cached = getCache(pubKeyCache, base64);
-		if (cached != null) return cached;
+      let valid = 0
 
-		byte[] decoded = Base64.getDecoder().decode(base64);
-		KeyFactory kf = KeyFactory.getInstance("EC");
-		PublicKey key = kf.generatePublic(new X509EncodedKeySpec(decoded));
+      return Promise.all(state.keys.map((k, i) => {
 
-		setCache(pubKeyCache, base64, key);
-		return key;
-	}
+        const sig = state.signatures[i]
+        if (!sig) return Promise.resolve(false)
 
-	// ---------- DATA KEY ----------
+        return resolveKeyString(k).then(keyObj => {
 
-	private static Map<String,Object> parseDataKey(String key) {
+          const keyObjs = Array.isArray(keyObj) ? keyObj : [keyObj]
 
-		if (!key.startsWith("data:key/")) return null;
+          return Promise.all(keyObjs.map(ko => {
 
-		int idx = key.indexOf(",");
-		if (idx < 0) return null;
+            if (!ko || ko.fmt !== "ES256") return false
 
-		String meta = key.substring(5, idx);
-		String data = key.substring(idx + 1);
+            const der = Buffer.isBuffer(ko.value)
+              ? ko.value.toString("base64")
+              : String(ko.value)
 
-		String[] parts = meta.split(";");
-		String fmt = parts[0].replace("key/", "").toUpperCase();
+            const pub = getCachedPublicKey(der)
 
-		String encoding = "raw";
-		for (int i = 1; i < parts.length; i++) {
-			if (parts[i].equals("base64")) encoding = "base64";
-			if (parts[i].equals("base64url")) encoding = "base64url";
-		}
+            return verifyAsync(pub, Buffer.from(sig, "base64"), hash)
 
-		Object value = data;
-
-		if (encoding.equals("base64")) {
-			value = Base64.getDecoder().decode(data);
-		}
-
-		return Map.of("fmt", fmt, "value", value);
-	}
-
-	// ---------- FETCH ----------
-
-	private static String fetchJson(String url) {
-
-		String cached = getCache(urlCache, url);
-		if (cached != null) return cached;
-
-		String data = null;
-
-		try {
-			BufferedReader in = new BufferedReader(
-				new InputStreamReader(new URL(url).openStream())
-			);
-
-			StringBuilder sb = new StringBuilder();
-			String line;
-
-			while ((line = in.readLine()) != null) {
-				sb.append(line);
-			}
-
-			in.close();
-			data = sb.toString();
-
-		} catch (Exception ignored) {}
-
-		setCache(urlCache, url, data);
-		return data;
-	}
-
-	// ---------- KEY RESOLUTION ----------
-
-	private static Object resolveKey(String key, Set<String> seen) throws Exception {
-
-		if (seen.contains(key)) {
-			throw new RuntimeException("OpenClaim: cyclic key reference detected");
-		}
-
-		Object cached = getCache(keyCache, key);
-		if (cached != null) return cached;
-
-		Set<String> next = new HashSet<>(seen);
-		next.add(key);
-
-		if (key.startsWith("data:key/")) {
-			Object parsed = parseDataKey(key);
-			setCache(keyCache, key, parsed);
-			return parsed;
-		}
-
-		if (key.startsWith("http")) {
-
-			String[] parts = key.split("#");
-			String raw = fetchJson(parts[0]);
-			if (raw == null) return null;
-
-			Object json = mapper.readValue(raw, Map.class);
-			Object current = json;
-
-			for (int i = 1; i < parts.length; i++) {
-				if (current instanceof Map<?,?> m) {
-					current = m.get(parts[i]);
-				}
-			}
-
-			if (current instanceof List<?>) {
-				setCache(keyCache, key, current);
-				return current;
-			}
-
-			if (current instanceof String s) {
-				Object resolved = resolveKey(s, next);
-				setCache(keyCache, key, resolved);
-				return resolved;
-			}
-
-			return null;
-		}
-
-		int idx = key.indexOf(":");
-		if (idx > 0) {
-			Map<String,Object> result = Map.of(
-				"fmt", key.substring(0, idx).toUpperCase(),
-				"value", key.substring(idx + 1)
-			);
-			setCache(keyCache, key, result);
-			return result;
-		}
-
-		return null;
-	}
-
-	// ---------- SIGN ----------
-
-	public static Map<String,Object> sign(
-		Map<String,Object> claim,
-		PrivateKey privateKey
-	) throws Exception {
-
-		PublicKey pub = KeyFactory.getInstance("EC")
-			.generatePublic(new X509EncodedKeySpec(
-				KeyFactory.getInstance("EC")
-					.getKeySpec(privateKey, X509EncodedKeySpec.class)
-					.getEncoded()
-			));
-
-		String keyStr = "data:key/es256;base64," +
-			Base64.getEncoder().encodeToString(pub.getEncoded());
-
-		List<String> keys = new ArrayList<>();
-		if (claim.get("key") instanceof List<?> list) {
-			for (Object o : list) keys.add(o.toString());
-		}
-
-		if (!keys.contains(keyStr)) keys.add(keyStr);
-
-		Collections.sort(keys);
-
-		List<String> sigs = new ArrayList<>();
-		if (claim.get("sig") instanceof List<?> list) {
-			for (Object o : list) sigs.add(o == null ? null : o.toString());
-		}
-
-		while (sigs.size() < keys.size()) sigs.add(null);
-
-		int index = keys.indexOf(keyStr);
-
-		Map<String,Object> tmp = new HashMap<>(claim);
-		tmp.put("key", keys);
-		tmp.put("sig", sigs);
-
-		byte[] canon = canonicalize(tmp);
-		byte[] hash = sha256(canon);
-
-		Signature signer = Signature.getInstance("NONEwithECDSA");
-		signer.initSign(privateKey);
-		signer.update(hash);
-
-		String sig = Base64.getEncoder().encodeToString(signer.sign());
-
-		sigs.set(index, sig);
-
-		Map<String,Object> out = new HashMap<>(claim);
-		out.put("key", keys);
-		out.put("sig", sigs);
-
-		return out;
-	}
-
-	// ---------- VERIFY ----------
-
-	public static boolean verify(Map<String,Object> claim) throws Exception {
-
-		List<String> keys = (List<String>) claim.get("key");
-		List<String> sigs = (List<String>) claim.get("sig");
-
-		if (keys == null || keys.isEmpty()) {
-			throw new RuntimeException("OpenClaim: missing public keys");
-		}
-
-		Map<String,Object> tmp = new HashMap<>(claim);
-		tmp.put("key", keys);
-		tmp.put("sig", sigs);
-
-		byte[] canon = canonicalize(tmp);
-		byte[] hash = sha256(canon);
-
-		int valid = 0;
-
-		for (int i = 0; i < keys.size(); i++) {
-
-			String sigB64 = sigs.get(i);
-			if (sigB64 == null) continue;
-
-			Object resolved = resolveKey(keys.get(i), new HashSet<>());
-
-			List<Object> objs = resolved instanceof List<?> l ? (List<Object>) l : List.of(resolved);
-
-			for (Object obj : objs) {
-
-				if (!(obj instanceof Map<?,?> m)) continue;
-
-				if (!"ES256".equals(m.get("fmt"))) continue;
-
-				String der = m.get("value") instanceof byte[]
-					? Base64.getEncoder().encodeToString((byte[]) m.get("value"))
-					: m.get("value").toString();
-
-				PublicKey pub = getCachedPublicKey(der);
-
-				Signature verifier = Signature.getInstance("NONEwithECDSA");
-				verifier.initVerify(pub);
-				verifier.update(hash);
-
-				if (verifier.verify(Base64.getDecoder().decode(sigB64))) {
-					valid++;
-					break;
-				}
-			}
-		}
-
-		return valid >= 1;
-	}
+          })).then(results => {
+            if (results.some(Boolean)) valid++
+          })
+        })
+      })).then(() =>
+        valid >= parseVerifyPolicy(policy, state.keys.length).minValid
+      )
+    })
+  }
 }`,
   },
   python: {
