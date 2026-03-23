@@ -181,8 +181,8 @@ export default function Docs() {
       </p>
 
       <h2>Supported Types (v1)</h2>
-      <CodeBlock code={`"typ": "ES256"   // default
-"typ": "EIP712"`} language="json" />
+      <CodeBlock code={`"fmt": "ES256"   // default
+"fmt": "EIP712"`} language="json" />
 
       <h2>URL Reference Example</h2>
       <CodeBlock code={`"key": "https://example.com/.well-known/openclaiming.json#level1#level2"`} language="json" />
@@ -346,7 +346,7 @@ export default function Docs() {
   },
   "nbf": 1712000000,
   "key": {
-    "typ": "ES256",
+    "fmt": "ES256",
     "crv": "P-256",
     "x": "BASE64_X",
     "y": "BASE64_Y"

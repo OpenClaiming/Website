@@ -117,7 +117,7 @@ export default function PaymentsExtension() {
     "line": 7
   },
   "key": {
-    "typ": "ES256",
+    "fmt": "ES256",
     "crv": "P-256",
     "x": "BASE64_X",
     "y": "BASE64_Y"
