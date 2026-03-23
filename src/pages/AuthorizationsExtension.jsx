@@ -177,7 +177,9 @@ export default function AuthorizationsExtension() {
       { "type": "contract", "value": "Community" }
     ]
   },
-  "key": ...,
+  "key": [
+    "data:key/es256;base64,MIIB..."
+  ],
   "sig": ["BASE64_SIGNATURE"]
 }`}
         language="json"
@@ -200,7 +202,9 @@ export default function AuthorizationsExtension() {
       { "type": "group", "value": "currentGroup" }
     ]
   },
-  "key": ...,
+  "key": [
+    "data:key/es256;base64,MIIB..."
+  ],
   "sig": ["BASE64_SIGNATURE"]
 }`}
         language="json"
@@ -224,7 +228,9 @@ export default function AuthorizationsExtension() {
       { "type": "app", "value": "Groups" }
     ]
   },
-  "key": ...,
+  "key": [
+    "https://community.example/.well-known/openclaiming.json#keys"
+  ],
   "sig": ["BASE64_SIGNATURE"]
 }`}
         language="json"
