@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DocLayout from "../components/docs/DocLayout";
 import CodeBlock from "../components/CodeBlock";
+import { solidityCode } from "../data/solidityCode";
 
 const implementations = {
   javascript: {
@@ -1637,95 +1638,9 @@ let package = Package(
   },
   solidity: {
     label: "Solidity",
-    code: `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
-
-import "./interfaces/IOpenClaiming.sol";
-
-contract OpenClaimingConsumer {
-
-	address public constant OPENCLAIMING_ADDRESS = 0x0000000000000000000000000000000000000000;
-
-	IOpenClaiming public constant oc = IOpenClaiming(OPENCLAIMING_ADDRESS);
-
-	error PaymentFailed();
-	error InvalidPrice();
-	error VerificationFailed();
-
-	event Purchased(
-		address indexed payer,
-		address indexed token,
-		address indexed recipient,
-		uint256 amount
-	);
-
-	uint256 public constant PRICE = 1e18;
-
-	function purchase(
-		IOpenClaiming.Payment calldata payment,
-		address[] calldata recipients,
-		bytes calldata signature
-	) external payable {
-
-		if (PRICE == 0) revert InvalidPrice();
-
-		bool ok = oc.verifyPayment(payment, signature);
-		if (!ok) revert VerificationFailed();
-
-		bool success = oc.executePayment{value: msg.value}(
-			payment,
-			recipients,
-			signature,
-			payment.line,
-			address(this),
-			PRICE
-		);
-
-		if (!success) revert PaymentFailed();
-
-		_handlePurchase(payment.payer);
-
-		emit Purchased(payment.payer, payment.token, address(this), PRICE);
-	}
-
-	function withdraw(address token, address to, uint256 amount) external {
-
-		if (token == address(0)) {
-			(bool ok,) = to.call{value: amount}("");
-			require(ok, "ETH transfer failed");
-		} else {
-			(bool ok, bytes memory data) = token.call(
-				abi.encodeWithSignature("transfer(address,uint256)", to, amount)
-			);
-			require(ok && (data.length == 0 || abi.decode(data, (bool))), "ERC20 transfer failed");
-		}
-	}
-
-	function _handlePurchase(address buyer) internal {
-		// implement application logic here
-	}
-
-	function canAfford(
-		address payer,
-		uint256 line,
-		uint256 amount
-	) external view returns (bool) {
-		uint256 available = oc.lineAvailable(payer, line);
-		return available >= amount;
-	}
-
-	function computeRecipientsHash(address[] calldata recipients)
-		external
-		pure
-		returns (bytes32)
-	{
-		return keccak256(abi.encodePacked(recipients));
-	}
-
-	receive() external payable {}
-}`,
+    code: solidityCode,
   },
-};
+  };
 
 const langOrder = ["javascript", "python", "go", "rust", "php", "java", "swift", "solidity"];
 
