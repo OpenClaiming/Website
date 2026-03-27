@@ -24,8 +24,9 @@ const navLinks = [
       { label: "Overview", path: "/Extensions" },
       { label: "Payments", path: "/PaymentsExtension" },
       { label: "Authorizations", path: "/AuthorizationsExtension" },
-      { label: "EVM Blockchains", path: "/EVMBlockchains" },
       { label: "Messaging", path: "/MessagingExtension" },
+      { label: "divider" },
+      { label: "EVM Blockchains", path: "/EVMBlockchains" },
     ],
   },
 ];
@@ -99,7 +100,10 @@ export default function Navbar() {
                         transition={{ duration: 0.15 }}
                         className="absolute top-full left-0 mt-1 w-56 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl shadow-black/40 overflow-hidden"
                       >
-                        {link.children.map((child) => (
+                        {link.children.map((child, idx) =>
+                          child.label === "divider" ? (
+                            <hr key={idx} className="border-gray-700 my-1 mx-3" />
+                          ) : (
                           <Link
                             key={child.path}
                             to={child.path}
@@ -111,7 +115,8 @@ export default function Navbar() {
                           >
                             {child.label}
                           </Link>
-                        ))}
+                          )
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -168,7 +173,10 @@ export default function Navbar() {
                     <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       {link.label}
                     </div>
-                    {link.children.map((child) => (
+                    {link.children.map((child, idx) =>
+                      child.label === "divider" ? (
+                        <hr key={idx} className="border-gray-700 my-1" />
+                      ) : (
                       <Link
                         key={child.path}
                         to={child.path}
@@ -180,7 +188,8 @@ export default function Navbar() {
                       >
                         {child.label}
                       </Link>
-                    ))}
+                      )
+                    )}
                   </div>
                 ) : (
                   <Link

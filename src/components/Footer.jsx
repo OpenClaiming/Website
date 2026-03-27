@@ -33,7 +33,6 @@ export default function Footer() {
               <Link to="/Extensions" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Overview</Link>
               <Link to="/PaymentsExtension" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Payments</Link>
               <Link to="/AuthorizationsExtension" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Authorizations</Link>
-              <Link to="/EVMBlockchains" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">EVM Blockchains</Link>
               <Link to="/MessagingExtension" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Messaging</Link>
             </div>
           </div>

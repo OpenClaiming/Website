@@ -11,8 +11,8 @@ const docNav = [
   { label: "Overview", path: "/Extensions", section: "Extensions" },
   { label: "Payments", path: "/PaymentsExtension", section: "Extensions" },
   { label: "Actions", path: "/ActionsExtension", section: "Extensions" },
-  { label: "EVM Blockchains", path: "/EVMBlockchains", section: "Extensions" },
   { label: "Messaging", path: "/MessagingExtension", section: "Extensions" },
+  { label: "EVM Blockchains", path: "/EVMBlockchains", section: "Extensions", divider: true },
 ];
 
 export default function DocLayout({ title, children }) {
@@ -54,25 +54,27 @@ export default function DocLayout({ title, children }) {
               ))}
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-3 px-3">Extensions</p>
               {docNav.filter(item => item.section === "Extensions").map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)}
-                  className={`block px-3 py-2 text-sm rounded-lg transition-colors ${
-                    location.pathname === item.path
-                      ? "text-emerald-600 bg-emerald-50 font-medium"
-                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                  }`}
-                >
-                  {item.label}
-                </Link>
+                <div key={item.path}>
+                  {item.divider && <hr className="my-2 border-gray-200" />}
+                  <Link
+                    to={item.path}
+                    onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)}
+                    className={`block px-3 py-2 text-sm rounded-lg transition-colors ${
+                      location.pathname === item.path
+                        ? "text-emerald-600 bg-emerald-50 font-medium"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </div>
               ))}
             </div>
           </nav>
 
           {/* Mobile doc nav */}
           <div className="lg:hidden flex flex-wrap gap-2 -mt-4 mb-4">
-            {docNav.map((item) => (
+            {docNav.filter(item => item.path).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
