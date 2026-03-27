@@ -12,6 +12,7 @@ const docNav = [
   { label: "Payments", path: "/PaymentsExtension", section: "Extensions" },
   { label: "Actions", path: "/ActionsExtension", section: "Extensions" },
   { label: "EVM Blockchains", path: "/EVMBlockchains", section: "Extensions" },
+  { label: "Messaging", path: "/MessagingExtension", section: "Extensions" },
 ];
 
 export default function DocLayout({ title, children }) {

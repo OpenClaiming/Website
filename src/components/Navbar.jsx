@@ -25,6 +25,7 @@ const navLinks = [
       { label: "Payments", path: "/PaymentsExtension" },
       { label: "Authorizations", path: "/AuthorizationsExtension" },
       { label: "EVM Blockchains", path: "/EVMBlockchains" },
+      { label: "Messaging", path: "/MessagingExtension" },
     ],
   },
 ];

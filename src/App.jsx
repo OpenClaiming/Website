@@ -18,6 +18,7 @@ import DesignPhilosophy from './pages/DesignPhilosophy';
 import Implementations from './pages/Implementations';
 import Comparison from './pages/Comparison';
 import EVMBlockchains from './pages/EVMBlockchains';
+import MessagingExtension from './pages/MessagingExtension';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -54,6 +55,7 @@ const AuthenticatedApp = () => {
         <Route path="/Implementations" element={<Implementations />} />
         <Route path="/Comparison" element={<Comparison />} />
         <Route path="/EVMBlockchains" element={<EVMBlockchains />} />
+        <Route path="/MessagingExtension" element={<MessagingExtension />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
