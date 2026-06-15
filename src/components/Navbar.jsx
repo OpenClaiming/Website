@@ -23,7 +23,7 @@ const navLinks = [
     children: [
       { label: "Overview", path: "/Extensions" },
       { label: "Payments", path: "/PaymentsExtension" },
-      { label: "Authorizations", path: "/AuthorizationsExtension" },
+      { label: "Actions", path: "/ActionsExtension" },
       { label: "Messaging", path: "/MessagingExtension" },
       { label: "divider" },
       { label: "EVM Blockchains", path: "/EVMBlockchains" },

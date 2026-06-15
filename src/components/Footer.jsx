@@ -32,7 +32,7 @@ export default function Footer() {
             <div className="space-y-2.5">
               <Link to="/Extensions" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Overview</Link>
               <Link to="/PaymentsExtension" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Payments</Link>
-              <Link to="/AuthorizationsExtension" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Authorizations</Link>
+              <Link to="/ActionsExtension" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Actions</Link>
               <Link to="/MessagingExtension" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0)} className="block text-sm hover:text-white transition-colors">Messaging</Link>
             </div>
           </div>
