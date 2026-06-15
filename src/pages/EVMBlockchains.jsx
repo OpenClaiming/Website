@@ -79,7 +79,7 @@ On-chain:
         <tbody>
           <tr>
             <td><code>name</code></td>
-            <td>"OpenClaiming.payments" or "OpenClaiming.authorizations"</td>
+            <td>"OpenClaiming.payments" or "OpenClaiming.actions"</td>
           </tr>
           <tr>
             <td><code>version</code></td>
@@ -111,26 +111,21 @@ On-chain:
         language="solidity"
       />
 
-      <h2>Authorization Struct</h2>
+      <h2>Action Struct</h2>
       <CodeBlock
-        code={`Authorization(
+        code={`Action(
   address authority,
   address subject,
-  bytes32 actorsHash,
-  bytes32 rolesHash,
-  bytes32 actionsHash,
-  bytes32 constraintsHash,
-  bytes32 contextsHash,
+  address contractAddress,
+  bytes4  method,
+  bytes32 paramsHash,
+  uint256 minimum,
+  uint256 fraction,
+  uint256 delay,
+  address invoker,
   uint256 nbf,
   uint256 exp
 )`}
-        language="solidity"
-      />
-
-      <h2>Nested Types</h2>
-      <CodeBlock
-        code={`Constraint(string key,string op,string value)
-Context(string type,string value)`}
         language="solidity"
       />
 
@@ -138,23 +133,20 @@ Context(string type,string value)`}
 
       <h1>Hashing Rules</h1>
       <p>
-        OpenClaiming uses deterministic hashing for all array and struct fields.
+        OpenClaiming uses deterministic hashing for array fields.
       </p>
 
-      <h2>Arrays</h2>
-      <p>Arrays are hashed by packing individual element hashes:</p>
-      <CodeBlock code={`keccak256(abi.encodePacked(values))`} language="solidity" />
+      <h2>Recipients Array (Payment)</h2>
+      <p>The recipients array is hashed using <code>abi.encode</code>:</p>
+      <CodeBlock code={`recipientsHash = keccak256(abi.encode(recipients)); // address[]`} language="solidity" />
 
-      <h2>Nested Structs</h2>
-      <p>Each struct is hashed individually, then packed and hashed again:</p>
-      <CodeBlock
-        code={`// hash each → pack → hash
-bytes32 hash1 = hashStruct(item1);
-bytes32 hash2 = hashStruct(item2);
-bytes32 finalHash = keccak256(abi.encodePacked(hash1, hash2));`}
-        language="solidity"
-      />
-      <p><strong>Important:</strong> Array order MUST be preserved. Empty arrays hash deterministically.</p>
+      <hr />
+
+      <hr />
+
+      <h1>Canonical Contract Address</h1>
+      <p>The OpenClaiming v1 contract is deployed at the same address across all supported EVM chains:</p>
+      <CodeBlock code={`0x99999febd42cad798fe10ab0b1c563002fc99999`} language="text" />
 
       <hr />
 
@@ -175,6 +167,33 @@ bytes32 finalHash = keccak256(abi.encodePacked(hash1, hash2));`}
         <li><strong>Contracts only verify + enforce</strong> — check signatures and apply business logic</li>
         <li><strong>Execution is optional</strong> — verify-only mode is valid</li>
       </ul>
+
+      <h2>Actions Execution Paths</h2>
+      <p>The <code>invoker</code> field in the <code>Action</code> struct determines which execution path is used:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Function</th>
+            <th>invoker value</th>
+            <th>ControlContract version</th>
+            <th>Mechanism</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>actionsExecute()</code></td>
+            <td><code>address(0)</code></td>
+            <td>v1</td>
+            <td>OpenClaiming calls the target contract directly as <code>msg.sender</code></td>
+          </tr>
+          <tr>
+            <td><code>actionsInvoke()</code></td>
+            <td>non-zero address</td>
+            <td>v2</td>
+            <td>EIP-2771 meta-transaction forwarding via the specified invoker</td>
+          </tr>
+        </tbody>
+      </table>
 
       <hr />
 
@@ -204,7 +223,7 @@ bytes32 finalHash = keccak256(abi.encodePacked(hash1, hash2));`}
       <h1>Example Flow</h1>
       <p>Complete workflow from JSON to execution:</p>
       <ol>
-        <li><strong>Build JSON</strong> — construct OpenClaim with payment or authorization data</li>
+        <li><strong>Build JSON</strong> — construct OpenClaim with payment or action data</li>
         <li><strong>Convert to struct</strong> — transform JSON fields into Solidity struct</li>
         <li><strong>Hash</strong> — compute EIP-712 digest</li>
         <li><strong>Sign</strong> — EOA signs the digest with private key</li>
