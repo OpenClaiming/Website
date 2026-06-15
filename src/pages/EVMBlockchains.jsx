@@ -131,22 +131,25 @@ On-chain:
 
       <hr />
 
-      <h1>Hashing Rules</h1>
-      <p>
-        OpenClaiming uses deterministic hashing for array fields.
-      </p>
-
-      <h2>Recipients Array (Payment)</h2>
-      <p>The recipients array is hashed using <code>abi.encode</code>:</p>
-      <CodeBlock code={`recipientsHash = keccak256(abi.encode(recipients)); // address[]`} language="solidity" />
-
-      <hr />
+      <h1>Execution Paths</h1>
+      <p>The <code>invoker</code> field in <code>Action</code> determines which execution path is used:</p>
+      <ul>
+        <li><strong><code>invoker = address(0)</code> → <code>actionsExecute()</code></strong> — OpenClaiming calls ControlContract directly as <code>msg.sender</code>. OpenClaiming must hold the invoke and endorse roles in Community.</li>
+        <li><strong><code>invoker = non-zero address</code> → <code>actionsInvoke()</code></strong> — OpenClaiming forwards calls via EIP-2771, preserving each signer's identity inside ControlContract.</li>
+      </ul>
 
       <hr />
 
       <h1>Canonical Contract Address</h1>
-      <p>The OpenClaiming v1 contract is deployed at the same address across all supported EVM chains:</p>
+      <p>The OpenClaiming contract is deployed at the same address on all supported chains:</p>
       <CodeBlock code={`0x99999febd42cad798fe10ab0b1c563002fc99999`} language="text" />
+      <p>Immutable. No proxy. No upgrade path.</p>
+
+      <hr />
+
+      <h1>Hashing Notes</h1>
+      <p>The <code>recipientsHash</code> field in the Payment struct is computed as:</p>
+      <CodeBlock code={`recipientsHash = keccak256(abi.encode(recipients)); // address[]`} language="solidity" />
 
       <hr />
 
@@ -167,33 +170,6 @@ On-chain:
         <li><strong>Contracts only verify + enforce</strong> — check signatures and apply business logic</li>
         <li><strong>Execution is optional</strong> — verify-only mode is valid</li>
       </ul>
-
-      <h2>Actions Execution Paths</h2>
-      <p>The <code>invoker</code> field in the <code>Action</code> struct determines which execution path is used:</p>
-      <table>
-        <thead>
-          <tr>
-            <th>Function</th>
-            <th>invoker value</th>
-            <th>ControlContract version</th>
-            <th>Mechanism</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>actionsExecute()</code></td>
-            <td><code>address(0)</code></td>
-            <td>v1</td>
-            <td>OpenClaiming calls the target contract directly as <code>msg.sender</code></td>
-          </tr>
-          <tr>
-            <td><code>actionsInvoke()</code></td>
-            <td>non-zero address</td>
-            <td>v2</td>
-            <td>EIP-2771 meta-transaction forwarding via the specified invoker</td>
-          </tr>
-        </tbody>
-      </table>
 
       <hr />
 

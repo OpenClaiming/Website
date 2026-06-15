@@ -57,7 +57,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-gray-800 text-sm text-center text-gray-600">
-          Released under a permissive open source license.
+          Source available. Deployment restricted to official instances. See contract for full terms.
         </div>
       </div>
     </footer>
