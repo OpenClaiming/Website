@@ -182,7 +182,7 @@ export default function Docs() {
       </ul>
       <CodeBlock code={`"key": [
   "data:key/es256;base64,MIIB...",
-  "https://example.com/.well-known/openclaim.json#keys"
+  "https://example.com/.well-known/openclaiming/example.com/alice.json#keys"
 ]`} language="json" />
 
       <h2>Key Rules</h2>
@@ -303,7 +303,7 @@ export default function Docs() {
       <p>OpenClaims may be published anywhere.</p>
 
       <h3>Well-Known Endpoints</h3>
-      <CodeBlock code={`https://example.com/.well-known/openclaim.json`} language="text" />
+      <CodeBlock code={`https://example.com/.well-known/openclaiming/example.com/alice.json`} language="text" />
 
       <h3>Application APIs</h3>
       <CodeBlock code={`GET /claims/{id}`} language="text" />

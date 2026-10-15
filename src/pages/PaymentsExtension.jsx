@@ -136,7 +136,7 @@ export default function PaymentsExtension() {
     "line": "7"
   },
   "key": [
-    "https://community.example/.well-known/openclaiming.json#payerKey"
+    "https://community.example/.well-known/openclaiming/community.example/alice.json#payerKey"
   ],
   "sig": ["BASE64_SIGNATURE"]
 }`}

@@ -25,7 +25,7 @@ export default function ProtocolExamples() {
   ],
   "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
-      <p>Publication: <code>https://example.com/.well-known/openclaim.json</code></p>
+      <p>Publication: <code>https://example.com/.well-known/openclaiming/example.com/alice.json</code></p>
 
       <hr />
 
@@ -41,7 +41,7 @@ export default function ProtocolExamples() {
   },
   "exp": 1750000000,
   "key": [
-    "https://community.example/.well-known/openclaim.json#keys"
+    "https://community.example/.well-known/openclaiming/community.example/alice.json#keys"
   ],
   "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
@@ -78,7 +78,7 @@ export default function ProtocolExamples() {
     "latest_hash": "H"
   },
   "key": [
-    "https://serverA.example/.well-known/openclaim.json#keys"
+    "https://serverA.example/.well-known/openclaiming/serverA.example/serverA.json#keys"
   ],
   "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
@@ -123,7 +123,7 @@ export default function ProtocolExamples() {
   },
   "exp": 1712003600,
   "key": [
-    "https://auth.example/.well-known/openclaim.json#keys"
+    "https://auth.example/.well-known/openclaiming/auth.example/auth.json#keys"
   ],
   "sig": ["BASE64_SIGNATURE"]
 }`} language="json" />
