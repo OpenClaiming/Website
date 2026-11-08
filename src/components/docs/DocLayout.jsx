@@ -11,6 +11,7 @@ const docNav = [
   { label: "Overview", path: "/Extensions", section: "Extensions" },
   { label: "Payments", path: "/PaymentsExtension", section: "Extensions" },
   { label: "Actions", path: "/ActionsExtension", section: "Extensions" },
+  { label: "Delegation", path: "/DelegationExtension", section: "Extensions" },
   { label: "Messaging", path: "/MessagingExtension", section: "Extensions" },
   { label: "EVM Blockchains", path: "/EVMBlockchains", section: "Extensions", divider: true },
 ];

@@ -24,6 +24,7 @@ const navLinks = [
       { label: "Overview", path: "/Extensions" },
       { label: "Payments", path: "/PaymentsExtension" },
       { label: "Actions", path: "/ActionsExtension" },
+      { label: "Delegation", path: "/DelegationExtension" },
       { label: "Messaging", path: "/MessagingExtension" },
       { label: "divider" },
       { label: "EVM Blockchains", path: "/EVMBlockchains" },

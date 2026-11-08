@@ -140,14 +140,15 @@ export default function Extensions() {
       <hr />
 
       <h1>Standard Extensions (v1)</h1>
-      <p>OpenClaiming defines two standard extensions:</p>
+      <p>OpenClaiming defines three standard extensions:</p>
       <table>
         <thead>
-          <tr><th>Extension</th><th>Purpose</th></tr>
+          <tr><th>Extension</th><th>Description</th></tr>
         </thead>
         <tbody>
           <tr><td><code>payments</code></td><td>value transfer authorization</td></tr>
           <tr><td><code>actions</code></td><td>execution authorization (invocations)</td></tr>
+          <tr><td><code>delegations</code></td><td>Key and domain delegation chains. An issuer authorizes a delegate — identified by public key hash, domain, or both — to act on its behalf, optionally scoped by label, context, rate limits, and geographic restrictions. Chains are verified link by link.</td></tr>
         </tbody>
       </table>
 
@@ -312,7 +313,7 @@ export default function Extensions() {
         <li>each claim defines its own format (<code>fmt</code>)</li>
         <li>ES256 supports full JSON flexibility</li>
         <li>EIP712 supports efficient on-chain execution</li>
-        <li><code>payments</code> and <code>actions</code> are the standard extensions</li>
+        <li><code>payments</code>, <code>actions</code>, and <code>delegations</code> are the standard extensions</li>
         <li>execution is determined by the verifying system</li>
       </ul>
 
