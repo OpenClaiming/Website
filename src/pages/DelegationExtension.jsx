@@ -112,8 +112,17 @@ export default function DelegationExtension() {
         exceed any single limit is denied.
       </p>
       <p>
+        <strong>Limits are global per delegation, not per viewer.</strong> The issuer grants the
+        delegate a total budget (e.g. 10,000 minutes/month across all the delegate's users). How the
+        delegate subdivides that budget among their own users is the delegate's concern, not the
+        protocol's. The verifying server tracks aggregate consumption per delegation per period.
+      </p>
+      <p>
         Rate limits are declarative constraints. The issuer states the limits; the verifying server
-        (e.g. a Safecloud jet) enforces them by tracking consumption per viewer per delegation.
+        (e.g. a Safecloud jet) enforces them by tracking total consumption per delegation. Payment for
+        the delegated quota is a separate concern — the delegate may receive it for free, pay off-chain
+        (invoice, Stripe), or settle on-chain via the OCP Payments extension. The delegation authorizes
+        access; it does not prescribe how payment works.
       </p>
 
       <hr />
